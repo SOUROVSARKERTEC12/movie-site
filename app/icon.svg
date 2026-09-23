@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="8" fill="#050505" />
+  <rect x="1" y="1" width="30" height="30" rx="7" fill="none" stroke="#2a2a2a" stroke-width="1" />
+  <!-- Film strip frame -->
+  <rect x="5.5" y="7" width="21" height="18" rx="3" fill="#ffffff" />
+  <!-- Film sprockets top & bottom -->
+  <rect x="7.5" y="9" width="2.5" height="2.5" rx="0.5" fill="#050505" />
+  <rect x="12" y="9" width="2.5" height="2.5" rx="0.5" fill="#050505" />
+  <rect x="17.5" y="9" width="2.5" height="2.5" rx="0.5" fill="#050505" />
+  <rect x="22" y="9" width="2.5" height="2.5" rx="0.5" fill="#050505" />
+  <rect x="7.5" y="20.5" width="2.5" height="2.5" rx="0.5" fill="#050505" />
+  <rect x="12" y="20.5" width="2.5" height="2.5" rx="0.5" fill="#050505" />
+  <rect x="17.5" y="20.5" width="2.5" height="2.5" rx="0.5" fill="#050505" />
+  <rect x="22" y="20.5" width="2.5" height="2.5" rx="0.5" fill="#050505" />
+  <!-- Center Play triangle -->
+  <polygon points="14.5,13.5 19.5,16 14.5,18.5" fill="#050505" />
+</svg>
