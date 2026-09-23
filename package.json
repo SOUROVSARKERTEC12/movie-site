@@ -1,27 +1,22 @@
 {
-  "name": "movie-site",
+  "name": "movie-site-monorepo",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@11.6.4",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "lucide-react": "^1.47.0",
-    "next": "16.3.6",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "dev": "turbo run dev",
+    "dev:user": "npm run dev --workspace=user-frontend",
+    "dev:admin": "npm run dev --workspace=admin-frontend",
+    "build": "turbo run build",
+    "build:user": "npm run build --workspace=user-frontend",
+    "build:admin": "npm run build --workspace=admin-frontend",
+    "lint": "turbo run lint"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.6",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "turbo": "^2.11.3"
   }
 }
