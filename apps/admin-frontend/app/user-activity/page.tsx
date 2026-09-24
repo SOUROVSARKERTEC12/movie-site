@@ -151,7 +151,6 @@ export default function UserActivityPage() {
             value={totalEvents}
             subtitle="Past 48 hours"
             icon={Activity}
-            sparklineData={[140, 160, 180, 200, 220]}
           />
           <StatCard
             title="Stream Starts"
@@ -160,7 +159,6 @@ export default function UserActivityPage() {
             trend="up"
             change="+18%"
             icon={Play}
-            sparklineData={[30, 42, 50, 60, 72]}
           />
           <StatCard
             title="Completions"
@@ -169,14 +167,12 @@ export default function UserActivityPage() {
             trend="up"
             change="78% rate"
             icon={CheckCircle2}
-            sparklineData={[20, 28, 35, 45, 54]}
           />
           <StatCard
             title="Searches Run"
             value={searches}
             subtitle="Catalog queries"
             icon={Search}
-            sparklineData={[15, 20, 24, 28, 33]}
           />
         </div>
 

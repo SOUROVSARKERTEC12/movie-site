@@ -7,38 +7,32 @@ import {
   LayoutDashboard,
   Users,
   Activity,
-  Radio,
   Film,
-  BarChart3,
   Layers,
-  Cpu,
   MonitorSmartphone,
-  Globe,
-  Search,
-  Server,
   FileText,
-  Settings,
   Menu,
   X,
   ExternalLink,
   ShieldCheck,
+  LucideIcon,
 } from 'lucide-react';
 
-const NAV_ITEMS = [
+interface NavItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  badge?: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
   { label: 'Users', href: '/users', icon: Users },
   { label: 'User Activity', href: '/user-activity', icon: Activity },
-  { label: 'Live Sessions', href: '/live-sessions', icon: Radio, badge: 'Live' },
   { label: 'Movies', href: '/movies', icon: Film },
-  { label: 'Movie Analytics', href: '/movie-analytics', icon: BarChart3 },
   { label: 'Categories', href: '/categories', icon: Layers },
-  { label: 'Streaming Telemetry', href: '/telemetry', icon: Cpu },
   { label: 'Devices & Platforms', href: '/devices', icon: MonitorSmartphone },
-  { label: 'Geographic Analytics', href: '/geographic', icon: Globe },
-  { label: 'Search Analytics', href: '/search-analytics', icon: Search },
-  { label: 'System Health', href: '/system-health', icon: Server, badge: '99.9%' },
   { label: 'Activity Logs', href: '/logs', icon: FileText },
-  { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export const AdminSidebar: React.FC = () => {
@@ -95,17 +89,6 @@ export const AdminSidebar: React.FC = () => {
                 <span>Ops Telemetry</span>
               </p>
             </div>
-          </div>
-        </div>
-
-        {/* Live Stream Pulse Pill */}
-        <div className="px-4 py-3 border-b border-neutral-900 bg-neutral-950/60">
-          <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-neutral-900/90 border border-neutral-800/80">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-              <span className="text-[11px] font-semibold text-neutral-300">Live Viewers</span>
-            </div>
-            <span className="text-xs font-mono font-bold text-white">3,842</span>
           </div>
         </div>
 

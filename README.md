@@ -144,11 +144,11 @@ graph TD
         end
 
         subgraph AdminApp ["apps/admin-frontend (Port 3001)"]
-            Dashboard["Executive Dashboard<br/>(KPI Cards, Live Stream Ticker)"]
-            LiveSessions["Live Streams Monitor<br/>(3s Heartbeat Pulse Simulation)"]
-            UserDirectory["Audience Directory<br/>(120 Subscribers with Drawer Inspector)"]
-            Telemetry["Streaming Telemetry<br/>(Buffer Health, Bitrates, CDN POPs)"]
-            Analytics["Movie Analytics & Drop-off<br/>(Retention Curves 0%-100%)"]
+            Dashboard["Executive Dashboard<br/>(KPI Cards, Live Activity Ticker)"]
+            UserDirectory["Audience Directory<br/>(Subscribers with Drawer Inspector)"]
+            CatalogOps["Catalog Operations<br/>(54 Films & Quality Filters)"]
+            CategoryRails["Category Rails<br/>(Hindi, English, Bangla, Dubbed)"]
+            DeviceAnalytics["Device Ecosystem<br/>(Hardware, Browsers, OS)"]
             SystemHealth["Cluster Infrastructure<br/>(CPU/RAM Gauges, Redis, Postgres)"]
             Charts["Zero-Dep SVG Chart Suite<br/>(Area, Bar, Donut, Gauge, Sparkline)"]
         end
@@ -194,25 +194,18 @@ movie-site/
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   │
-│   └── admin-frontend/                # Operations & Streaming Telemetry Dashboard (Port 3001)
+│   └── admin-frontend/                # Operations & Platform Dashboard (Port 3001)
 │       ├── app/
 │       │   ├── layout.tsx             # Admin shell with collapsible sidebar & header
 │       │   ├── page.tsx               # 1. Main Dashboard (KPIs, stream trends, live ticker)
-│       │   ├── users/page.tsx         # 2. Audience Directory (120 subscribers, filters, drawer)
-│       │   ├── user-activity/page.tsx # 3. User Activity (220 real-time playback/auth events)
-│       │   ├── live-sessions/page.tsx # 4. Live Sessions (3s heartbeat pulse simulation)
-│       │   ├── movies/page.tsx        # 5. Movies Catalog (54 films, quality filter, inspector)
-│       │   ├── movie-analytics/page.tsx # 6. Retention Drop-off curves & category comparisons
-│       │   ├── categories/page.tsx    # 7. Category Breakdowns (Hindi, English, Bangla, Dubbed)
-│       │   ├── telemetry/page.tsx     # 8. Streaming Telemetry (TTFB, buffer health, CDN POPs)
-│       │   ├── devices/page.tsx       # 9. Hardware form factors, browsers, OS, resolutions
-│       │   ├── geographic/page.tsx    # 10. Geographic Analytics (18 countries & hub cities)
-│       │   ├── search-analytics/page.tsx # 11. Search queries, zero-result terms, funnel
-│       │   ├── system-health/page.tsx # 12. Cluster nodes, PostgreSQL, Redis, API latency
-│       │   ├── logs/page.tsx          # 13. Administrative Security Audit Trail
-│       │   └── settings/page.tsx      # 14. Bitrate caps, codecs, cache TTL, maintenance mode
+│       │   ├── users/page.tsx         # 2. Audience Directory (Filters, search, drawer inspector)
+│       │   ├── user-activity/page.tsx # 3. User Activity Stream (Real-time playback/auth events)
+│       │   ├── movies/page.tsx        # 4. Movies Catalog (54 films, quality filter, inspector)
+│       │   ├── categories/page.tsx    # 5. Category Rails (Hindi, English, Bangla, Dubbed)
+│       │   ├── devices/page.tsx       # 6. Hardware form factors, browsers, OS, resolutions
+│       │   └── logs/page.tsx          # 7. Administrative Security Audit Trail
 │       ├── components/
-│       │   ├── AdminSidebar.tsx       # Collapsible navigation with all 14 links & live count
+│       │   ├── AdminSidebar.tsx       # Collapsible navigation with all 7 operational views
 │       │   ├── AdminHeader.tsx        # Topbar with global cluster health badge & alerts
 │       │   ├── StatCard.tsx           # KPI card with trendline sparkline
 │       │   ├── DataTable.tsx          # Searchable, filterable, sortable, paginated table
@@ -222,7 +215,7 @@ movie-site/
 │       │       ├── DonutChart.tsx     # Circular distribution with interactive segments
 │       │       ├── GaugeChart.tsx     # Semicircular buffer health / resource dials
 │       │       └── Sparkline.tsx      # Inline velocity sparklines for KPI cards
-│       ├── data/                      # Structured mock datasets (users, sessions, telemetry)
+│       ├── data/                      # Clean initial datasets (users, movies, logs, system)
 │       ├── package.json
 │       └── tsconfig.json
 │
@@ -303,22 +296,15 @@ The customer-facing OTT platform delivering cinematic movie discovery, playback,
 
 An operations and telemetry dashboard providing deep real-time visibility across the entire streaming platform.
 
-#### 14 Operational Modules:
+#### Core Operational Modules:
 
-1. **Dashboard Overview (`/`)**: High-level platform KPIs (Total Users, Active Streams, Bandwidth, 24h Watch Hours) with area trendlines and a live stream ticker.
-2. **Audience Directory (`/users`)**: 120 fictional subscribers with multi-parameter filtering (tier, status, country), search, sorting, and a slide-over drawer inspector showing user playback history.
-3. **User Activity Stream (`/user-activity`)**: 220 granular playback, authentication, and security audit events with real-time classification badges.
-4. **Live Sessions Monitor (`/live-sessions`)**: Active streams with an autonomous 3-second simulation engine modulating viewer progress, buffer depths, bitrates, and heartbeats.
-5. **Movie Catalog Operations (`/movies`)**: 54-film inventory management with quality filters, IMDb ratings, runtimes, and movie inspection modals.
-6. **Movie Analytics & Retention (`/movie-analytics`)**: Granular viewer retention drop-off curves (0% intro through 100% credits), completion rates, and average watch durations.
-7. **Category Analytics (`/categories`)**: Comparative metrics across Hindi, English, Bangla, and Hindi Dubbed catalogs (view counts, watch hours, and revenue share).
-8. **Streaming Telemetry (`/telemetry`)**: Deep stream health telemetry including Time to First Byte (TTFB), semicircular buffer health gauges, and edge hit-rates across global CDN POPs.
-9. **Device Analytics (`/devices`)**: Hardware breakdown across Smart TVs (OLED, Apple TV), Desktop browsers (Chrome, Safari, Edge), mobile operating systems, and viewport resolutions.
-10. **Geographic Distribution (`/geographic`)**: Regional viewer densities, data bandwidth consumption, and streaming quality distribution across 18 countries.
-11. **Search Analytics (`/search-analytics`)**: Top search terms, zero-result queries, search-to-watch conversion funnels, and discovery drop-offs.
-12. **Infrastructure Health (`/system-health`)**: Cluster node utilization (CPU, Memory, Disk), API gateway latency percentiles, Redis cache hit-ratios, and PostgreSQL connection pool stats.
-13. **Security Audit Log (`/logs`)**: Immutable administrative activity trail logging permission updates, catalog edits, and configuration changes.
-14. **Platform Settings (`/settings`)**: Stream configuration controls (bitrate ceilings, default codecs, cache TTLs, maintenance mode toggles).
+1. **Dashboard Overview (`/`)**: High-level platform KPIs (Total Users, Active Users, Watch Hours, Catalog Count), unified System Infrastructure & Telemetry Health (PostgreSQL, Redis, Storage CDN, Transcoder queue), and live activity ticker.
+2. **Audience Directory (`/users`)**: Subscriber directory with multi-parameter filtering (tier, status, country), search, sorting, and slide-over user drawer.
+3. **User Activity Stream (`/user-activity`)**: Granular playback, authentication, and security audit events with real-time classification badges.
+4. **Movie Catalog Operations (`/movies`)**: 54-film inventory management with quality filters, IMDb ratings, runtimes, and movie inspection modals.
+5. **Category Rails (`/categories`)**: Detailed catalog and quality metrics across Hindi, English, Bangla, and Hindi Dubbed catalogs.
+6. **Device Ecosystem (`/devices`)**: Hardware breakdown across Smart TVs, desktop browsers, mobile operating systems, and viewport resolutions.
+7. **Security Audit Log (`/logs`)**: Immutable administrative activity trail logging catalog edits, config updates, and access events.
 
 ---
 
@@ -455,33 +441,23 @@ npm run lint             # Run ESLint verification across all packages and apps
 
 | Route | Module Name | Primary Telemetry & Views |
 |---|---|---|
-| `/` | **Dashboard** | Total users, active streams, bandwidth, 24h watch hours, stream trends, and live activity ticker. |
-| `/users` | **Audience Directory** | 120 subscribers with tier badges, status chips, multi-filter search, and slide-over user drawer. |
-| `/user-activity` | **User Activity Stream** | 220 granular playback, auth, and security events with timestamped filterable table. |
-| `/live-sessions` | **Live Sessions** | Active streams with 3s heartbeat pulse simulation (buffer health, bitrate, time elapsed). |
+| `/` | **Dashboard** | Total users, active streams, catalog count, unified System Health & Infrastructure telemetry, and live activity ticker. |
+| `/users` | **Audience Directory** | Subscriber directory with tier badges, status chips, multi-filter search, and slide-over user drawer. |
+| `/user-activity` | **User Activity Stream** | Real-time playback, auth, and security events with timestamped filterable table. |
 | `/movies` | **Catalog Operations** | 54-film inventory with quality filters, IMDb ratings, runtimes, and movie inspection modals. |
-| `/movie-analytics` | **Retention Analytics** | Granular viewer drop-off curves (0% to 100%), average watch duration, and completion rates. |
-| `/categories` | **Category Performance**| Comparative view counts, watch hours, and revenue share across Hindi, English, Bangla, and Dubbed. |
-| `/telemetry` | **Streaming Telemetry** | TTFB metrics, semicircular buffer health gauges, and edge hit-rates across global CDN POPs. |
-| `/devices` | **Device Analytics** | Breakdown across Smart TVs, desktop browsers, mobile operating systems, and viewport resolutions. |
-| `/geographic` | **Geographic Insights** | Regional viewer densities, data bandwidth consumption, and streaming quality distribution across 18 countries. |
-| `/search-analytics`| **Search Discovery** | Top searched terms, zero-result queries, search-to-watch conversion funnels, and drop-offs. |
-| `/system-health` | **Cluster Health** | Node CPU/RAM gauges, API latency percentiles, Redis cache hit-ratios, and Postgres connection stats. |
+| `/categories` | **Category Rails** | Catalog distribution and quality breakdown across Hindi, English, Bangla, and Dubbed. |
+| `/devices` | **Device Ecosystem** | Breakdown across Smart TVs, desktop browsers, mobile operating systems, and viewport resolutions. |
 | `/logs` | **Security Audit Log** | Immutable administrative activity trail logging catalog edits, config updates, and access events. |
-| `/settings` | **Platform Config** | Bitrate ceilings, default video codecs, CDN cache TTLs, and platform maintenance mode switches. |
 
 ---
 
 <span id="datasets"></span>
 ## 📈 Dataset Specifications & Telemetry Engine
 
-The CineBlack monorepo includes comprehensive mock data modeling real-world streaming platform conditions without requiring an external database:
+The CineBlack monorepo features a clean operational architecture ready for production API integration:
 
 * **54 Feature Films (`mockMovies.ts`)**: Authentic titles spanning Hindi, English, Bangla, and Hindi Dubbed with official TMDB poster artwork, backdrop banners, release years, IMDb ratings, and synopsis metadata.
-* **120 Subscriber Profiles (`mockUsers.ts`)**: Fictional user accounts with geographic coordinates, registered devices (Apple TV, LG OLED, Sony Bravia, MacBook Pro, iPhone, Galaxy), and subscription tiers (*Free, Standard HD, Premium 4K, Family VIP*).
-* **220 Activity Events (`mockActivities.ts`)**: Granular activity logs covering video starts, pauses, seeks, quality modifications, completed streams, and search actions.
-* **3-Second Live Session Heartbeat**: `/live-sessions` features an autonomous pulse engine that updates session positions, modulates buffer depths (8s to 45s), adjusts bitrates, and dynamically timestamps heartbeats.
-* **Global CDN Edge Topology**: Simulated metrics across 8 worldwide edge locations: *Ashburn (US-East), San Jose (US-West), Frankfurt (EU-Central), London (EU-West), Mumbai (AP-South), Dhaka (AP-South-2), Singapore (AP-East), and Sydney (AP-Southeast)*.
+* **Clean State Architecture**: Users, user activities, live sessions, and audit logs are initialized to clean empty states (`0` counts and empty arrays), ready for real-time WebSocket, Kafka, or REST API connections without synthetic demo bloat.
 
 ---
 

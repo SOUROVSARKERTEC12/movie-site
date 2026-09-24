@@ -151,7 +151,6 @@ export default function MoviesPage() {
             value={totalMovies}
             subtitle="Curated full features"
             icon={Film}
-            sparklineData={[42, 46, 50, 52, 54]}
           />
           <StatCard
             title="4K UHD Masters"
@@ -160,14 +159,12 @@ export default function MoviesPage() {
             trend="up"
             change="High Res"
             icon={CheckCircle}
-            sparklineData={[30, 34, 38, 41, 45]}
           />
           <StatCard
             title="Featured Pins"
             value={featuredCount}
             subtitle="Hero carousel tier"
             icon={Flame}
-            sparklineData={[6, 8, 9, 10, 10]}
           />
           <StatCard
             title="Catalog Views"
@@ -176,7 +173,6 @@ export default function MoviesPage() {
             trend="up"
             change="+16.2%"
             icon={Eye}
-            sparklineData={[28, 32, 36, 40, 44]}
           />
         </div>
 

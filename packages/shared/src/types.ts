@@ -1,6 +1,17 @@
-export type MovieCategory = 'Hindi' | 'English' | 'Bangla' | 'Hindi Dubbed';
+export type MovieCategory = 'Hindi' | 'English' | 'Bangla' | 'Hindi Dubbed' | string;
 
 export type MovieQuality = '4K UHD' | '1080p FHD' | '720p HD' | 'HDR';
+
+export interface CategoryModel {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  subcategories: string[];
+  color?: string;
+  borderAccent?: string;
+  isCustom?: boolean;
+}
 
 export interface Movie {
   id: string;
@@ -8,6 +19,7 @@ export interface Movie {
   originalTitle?: string;
   description: string;
   category: MovieCategory;
+  subcategory?: string;
   genre: string[];
   releaseYear: number;
   rating: number;
@@ -35,6 +47,7 @@ export interface WatchProgress {
   updatedAt: number;
 }
 
+export type UserRole = 'admin' | 'super_admin' | 'user';
 export type UserSubscriptionTier = 'Free' | 'Standard HD' | 'Premium 4K' | 'Family VIP';
 export type UserStatus = 'Active' | 'Inactive' | 'Suspended' | 'VIP';
 
@@ -43,10 +56,10 @@ export interface UserProfile {
   name: string;
   email: string;
   avatar: string;
+  role: UserRole;
   registrationDate: string;
   lastActive: string;
   status: UserStatus;
-  subscriptionTier: UserSubscriptionTier;
   totalWatchTimeHours: number;
   moviesWatchedCount: number;
   currentDevice: string;

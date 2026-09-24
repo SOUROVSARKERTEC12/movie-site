@@ -41,11 +41,11 @@ export default function DevicesPage() {
   ];
 
   const resolutionData = [
-    { resolution: '3840 × 2160 (4K UHD)', share: '32%', streams: '1,229', trend: '+14%' },
-    { resolution: '1920 × 1080 (1080p FHD)', share: '48%', streams: '1,844', trend: 'Stable' },
-    { resolution: '2560 × 1440 (2K QHD)', share: '11%', streams: '422', trend: '+6%' },
-    { resolution: '390 × 844 (Mobile Retina)', share: '6%', streams: '230', trend: '+2%' },
-    { resolution: '1280 × 720 (720p HD)', share: '3%', streams: '117', trend: '-8%' },
+    { resolution: '3840 × 2160 (4K UHD)', share: '32%', streams: '0', trend: 'Standby' },
+    { resolution: '1920 × 1080 (1080p FHD)', share: '48%', streams: '0', trend: 'Standby' },
+    { resolution: '2560 × 1440 (2K QHD)', share: '11%', streams: '0', trend: 'Standby' },
+    { resolution: '390 × 844 (Mobile Retina)', share: '6%', streams: '0', trend: 'Standby' },
+    { resolution: '1280 × 720 (720p HD)', share: '3%', streams: '0', trend: 'Standby' },
   ];
 
   const connectionData = [
@@ -70,7 +70,6 @@ export default function DevicesPage() {
             value="46%"
             subtitle="Largest viewing tier"
             icon={Laptop}
-            sparklineData={[44, 45, 45, 46, 46]}
           />
           <StatCard
             title="Mobile Share"
@@ -79,7 +78,6 @@ export default function DevicesPage() {
             trend="up"
             change="+4%"
             icon={Smartphone}
-            sparklineData={[28, 30, 31, 33, 34]}
           />
           <StatCard
             title="Living Room (TV)"
@@ -88,7 +86,6 @@ export default function DevicesPage() {
             trend="up"
             change="Fastest growing"
             icon={Tv}
-            sparklineData={[9, 10, 11, 13, 14]}
           />
           <StatCard
             title="4K Capable Displays"
@@ -97,7 +94,6 @@ export default function DevicesPage() {
             trend="up"
             change="High Res"
             icon={Layers}
-            sparklineData={[35, 37, 39, 41, 43]}
           />
         </div>
 

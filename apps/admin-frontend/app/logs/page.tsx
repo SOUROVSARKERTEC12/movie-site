@@ -116,7 +116,6 @@ export default function LogsPage() {
             value={totalLogs}
             subtitle="Security events"
             icon={FileText}
-            sparklineData={[6, 7, 8, 9, 10]}
           />
           <StatCard
             title="Successful Executions"
@@ -125,14 +124,12 @@ export default function LogsPage() {
             trend="up"
             change="90%"
             icon={CheckCircle}
-            sparklineData={[5, 6, 7, 8, 9]}
           />
           <StatCard
             title="Blocked Attempts"
             value={failedCount}
             subtitle="Auth failures"
             icon={XCircle}
-            sparklineData={[1, 1, 1, 1, 1]}
           />
           <StatCard
             title="Audit Status"
@@ -141,7 +138,6 @@ export default function LogsPage() {
             trend="up"
             change="Compliant"
             icon={Shield}
-            sparklineData={[1, 1, 1, 1, 1]}
           />
         </div>
 
