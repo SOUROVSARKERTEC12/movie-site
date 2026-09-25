@@ -20,7 +20,6 @@ export const MOCK_USERS: UserProfile[] = [
     },
     ipAddress: '103.230.104.12',
     preferences: {
-      preferredQuality: '4K UHD',
       subtitlesEnabled: true,
       autoplayNext: true,
     },
@@ -44,7 +43,6 @@ export const MOCK_USERS: UserProfile[] = [
     },
     ipAddress: '198.51.100.44',
     preferences: {
-      preferredQuality: '4K UHD',
       subtitlesEnabled: false,
       autoplayNext: true,
     },
@@ -68,7 +66,6 @@ export const MOCK_USERS: UserProfile[] = [
     },
     ipAddress: '103.205.71.18',
     preferences: {
-      preferredQuality: '1080p FHD',
       subtitlesEnabled: true,
       autoplayNext: false,
     },

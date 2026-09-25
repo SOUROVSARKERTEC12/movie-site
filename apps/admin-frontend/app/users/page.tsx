@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Users,
@@ -16,10 +16,6 @@ import {
   CheckCircle,
   AlertTriangle,
   RotateCcw,
-  Clock,
-  MapPin,
-  Laptop,
-  Mail,
   User as UserIcon,
 } from 'lucide-react';
 import { AdminHeader } from '@/components/AdminHeader';
@@ -27,7 +23,7 @@ import { DataTable, Column } from '@/components/DataTable';
 import { StatusBadge } from '@/components/StatusBadge';
 import { StatCard } from '@/components/StatCard';
 import { MOCK_USERS } from '@/data/mockUsers';
-import { UserProfile, UserRole, UserStatus, MovieQuality } from '@movie-site/shared';
+import { UserProfile, UserRole, UserStatus } from '@movie-site/shared';
 
 const STORAGE_KEY = 'cineblack_admin_users';
 
@@ -39,7 +35,6 @@ interface UserFormData {
   country: string;
   city: string;
   currentDevice: string;
-  preferredQuality: MovieQuality;
 }
 
 const DEFAULT_FORM_DATA: UserFormData = {
@@ -50,7 +45,6 @@ const DEFAULT_FORM_DATA: UserFormData = {
   country: 'Bangladesh',
   city: 'Dhaka',
   currentDevice: 'Chrome • Windows',
-  preferredQuality: '1080p FHD',
 };
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -90,23 +84,26 @@ export default function UsersPage() {
 
   // Load users from localStorage or fallback to MOCK_USERS
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setUsers(parsed);
-            setIsLoaded(true);
-            return;
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setUsers(parsed);
+              setIsLoaded(true);
+              return;
+            }
+          } catch (e) {
+            console.error('Failed to parse saved users from localStorage', e);
           }
-        } catch (e) {
-          console.error('Failed to parse saved users from localStorage', e);
         }
+        setUsers(MOCK_USERS);
+        setIsLoaded(true);
       }
-      setUsers(MOCK_USERS);
-      setIsLoaded(true);
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Save users to localStorage whenever state changes
@@ -145,7 +142,6 @@ export default function UsersPage() {
       country: user.location?.country || 'Bangladesh',
       city: user.location?.city || 'Dhaka',
       currentDevice: user.currentDevice,
-      preferredQuality: user.preferences?.preferredQuality || '1080p FHD',
     });
     setFormError('');
   };
@@ -192,7 +188,6 @@ export default function UsersPage() {
       },
       ipAddress: `192.168.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 250)}`,
       preferences: {
-        preferredQuality: formData.preferredQuality,
         subtitlesEnabled: true,
         autoplayNext: true,
       },
@@ -243,8 +238,6 @@ export default function UsersPage() {
         flag: flag,
       },
       preferences: {
-        ...editingUser.preferences,
-        preferredQuality: formData.preferredQuality,
         subtitlesEnabled: editingUser.preferences?.subtitlesEnabled ?? true,
         autoplayNext: editingUser.preferences?.autoplayNext ?? true,
       },
@@ -654,31 +647,15 @@ export default function UsersPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-neutral-300 font-bold mb-1">Current Device</label>
-                  <input
-                    type="text"
-                    value={formData.currentDevice}
-                    onChange={(e) => setFormData({ ...formData, currentDevice: e.target.value })}
-                    placeholder="e.g. Chrome • macOS"
-                    className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl px-3 py-2 text-white placeholder-neutral-600 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-neutral-300 font-bold mb-1">Preferred Quality</label>
-                  <select
-                    value={formData.preferredQuality}
-                    onChange={(e) =>
-                      setFormData({ ...formData, preferredQuality: e.target.value as MovieQuality })
-                    }
-                    className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl px-3 py-2 text-white focus:outline-none"
-                  >
-                    <option value="4K UHD">4K UHD</option>
-                    <option value="1080p FHD">1080p FHD</option>
-                    <option value="720p HD">720p HD</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-neutral-300 font-bold mb-1">Current Device</label>
+                <input
+                  type="text"
+                  value={formData.currentDevice}
+                  onChange={(e) => setFormData({ ...formData, currentDevice: e.target.value })}
+                  placeholder="e.g. Chrome • macOS"
+                  className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl px-3 py-2 text-white placeholder-neutral-600 focus:outline-none"
+                />
               </div>
 
               <div className="pt-3 border-t border-neutral-800 flex items-center justify-end gap-2">
@@ -836,30 +813,14 @@ export default function UsersPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-neutral-300 font-bold mb-1">Current Device</label>
-                  <input
-                    type="text"
-                    value={formData.currentDevice}
-                    onChange={(e) => setFormData({ ...formData, currentDevice: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl px-3 py-2 text-white focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-neutral-300 font-bold mb-1">Preferred Quality</label>
-                  <select
-                    value={formData.preferredQuality}
-                    onChange={(e) =>
-                      setFormData({ ...formData, preferredQuality: e.target.value as MovieQuality })
-                    }
-                    className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl px-3 py-2 text-white focus:outline-none"
-                  >
-                    <option value="4K UHD">4K UHD</option>
-                    <option value="1080p FHD">1080p FHD</option>
-                    <option value="720p HD">720p HD</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-neutral-300 font-bold mb-1">Current Device</label>
+                <input
+                  type="text"
+                  value={formData.currentDevice}
+                  onChange={(e) => setFormData({ ...formData, currentDevice: e.target.value })}
+                  className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl px-3 py-2 text-white focus:outline-none"
+                />
               </div>
 
               <div className="pt-3 border-t border-neutral-800 flex items-center justify-end gap-2">
@@ -998,13 +959,9 @@ export default function UsersPage() {
                   <span>{selectedUser.location?.city || 'N/A'}, {selectedUser.location?.country || ''}</span>
                 </span>
               </div>
-              <div className="flex items-center justify-between py-1 border-b border-neutral-900">
+              <div className="flex items-center justify-between py-1">
                 <span className="text-neutral-400">IP Address:</span>
                 <span className="font-mono text-neutral-300">{selectedUser.ipAddress}</span>
-              </div>
-              <div className="flex items-center justify-between py-1">
-                <span className="text-neutral-400">Preferred Quality:</span>
-                <span className="font-bold text-emerald-400">{selectedUser.preferences?.preferredQuality || '1080p FHD'}</span>
               </div>
             </div>
 

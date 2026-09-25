@@ -71,7 +71,7 @@ export interface UserProfile {
   ipAddress: string;
   currentSessionId?: string;
   preferences?: {
-    preferredQuality: MovieQuality;
+    preferredQuality?: MovieQuality;
     subtitlesEnabled: boolean;
     autoplayNext: boolean;
   };
