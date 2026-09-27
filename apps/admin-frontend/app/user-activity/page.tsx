@@ -299,7 +299,6 @@ export default function UserActivityPage() {
     <div className="min-h-screen bg-[#050505] pb-12">
       <AdminHeader
         title="Live User Activity & Telemetry Audit"
-        subtitle="Real-time stream of player actions, playback events, quality switches, and authentication logs"
         actions={
           <div className="flex items-center gap-2">
             <button

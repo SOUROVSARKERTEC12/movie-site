@@ -24,6 +24,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { StatCard } from '@/components/StatCard';
 import { MOCK_USERS } from '@/data/mockUsers';
 import { UserProfile, UserRole, UserStatus } from '@movie-site/shared';
+import { recordAuditLog } from '@/lib/auditLogger';
 
 const STORAGE_KEY = 'cineblack_admin_users';
 
@@ -196,6 +197,12 @@ export default function UsersPage() {
     setUsers([newUser, ...users]);
     setIsCreateModalOpen(false);
     setToastMessage(`Created user "${newUser.name}" as ${newUser.role}`);
+    recordAuditLog({
+      action: 'CREATE_USER',
+      resource: `${newUser.name} (${newUser.email})`,
+      details: `Registered account with role "${newUser.role}", tier status "${newUser.status}", from ${newUser.location.city}, ${newUser.location.country}`,
+      result: 'SUCCESS',
+    });
   };
 
   // Update User Handler
@@ -249,6 +256,12 @@ export default function UsersPage() {
     }
     setEditingUser(null);
     setToastMessage(`Updated user "${updatedUser.name}"`);
+    recordAuditLog({
+      action: updatedUser.role !== editingUser.role ? 'UPDATE_ROLE' : 'UPDATE_USER',
+      resource: `${updatedUser.name} (${updatedUser.email})`,
+      details: `Updated profile (role: "${updatedUser.role}", status: "${updatedUser.status}", location: ${updatedUser.location.city})`,
+      result: 'SUCCESS',
+    });
   };
 
   // Delete User Handler
@@ -259,6 +272,12 @@ export default function UsersPage() {
       setSelectedUser(null);
     }
     setToastMessage(`Deleted user "${deletingUser.name}"`);
+    recordAuditLog({
+      action: 'DELETE_USER',
+      resource: `${deletingUser.name} (${deletingUser.email})`,
+      details: `Revoked subscriber account and purged active sessions`,
+      result: 'SUCCESS',
+    });
     setDeletingUser(null);
   };
 
@@ -408,7 +427,6 @@ export default function UsersPage() {
     <div className="min-h-screen bg-[#050505] pb-12">
       <AdminHeader
         title="User & Access Management"
-        subtitle="Manage user roles (super_admin, admin, user), accounts, permissions, and CRUD operations"
         actions={
           <div className="flex items-center gap-2">
             <button

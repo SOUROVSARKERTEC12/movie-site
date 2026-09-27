@@ -36,16 +36,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cineblack_admin_users');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            setTotalUserCount(parsed.length);
-            setActiveUserCount(parsed.filter((u: any) => u.status === 'Active' || u.status === 'VIP').length);
+      const timer = setTimeout(() => {
+        const saved = localStorage.getItem('cineblack_admin_users');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+              setTotalUserCount(parsed.length);
+              setActiveUserCount(
+                parsed.filter((u: { status?: string }) => u.status === 'Active' || u.status === 'VIP').length
+              );
+            }
+          } catch {
+            // ignore parse failure
           }
-        } catch (e) {}
-      }
+        }
+      }, 0);
+
+      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -53,7 +61,6 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#050505] pb-12">
       <AdminHeader
         title="Streaming Operations Dashboard"
-        subtitle="Catalog overview, platform infrastructure, and audience activity"
         actions={
           <div className="flex items-center gap-2">
             <Link

@@ -24,6 +24,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { StatCard } from '@/components/StatCard';
 import { MOCK_MOVIES } from '@/data/mockMovies';
 import { Movie, MovieCategory, MovieQuality } from '@movie-site/shared';
+import { recordAuditLog } from '@/lib/auditLogger';
 
 const STORAGE_MOVIES_KEY = 'cineblack_admin_movies';
 
@@ -249,6 +250,12 @@ export default function MoviesPage() {
     setMovies([newMovie, ...movies]);
     setIsCreateModalOpen(false);
     setToastMessage(`Created movie "${newMovie.title}"`);
+    recordAuditLog({
+      action: 'CREATE_MOVIE',
+      resource: newMovie.title,
+      details: `Created new ${newMovie.category} title (${newMovie.quality}) directed by ${newMovie.director}`,
+      result: 'SUCCESS',
+    });
   };
 
   // Handle Update Movie
@@ -300,6 +307,12 @@ export default function MoviesPage() {
     }
     setEditingMovie(null);
     setToastMessage(`Updated movie "${updatedMovie.title}"`);
+    recordAuditLog({
+      action: 'UPDATE_MOVIE',
+      resource: updatedMovie.title,
+      details: `Updated metadata, status (${updatedMovie.status}), and video quality (${updatedMovie.quality})`,
+      result: 'SUCCESS',
+    });
   };
 
   // Handle Delete Movie
@@ -310,6 +323,12 @@ export default function MoviesPage() {
       setSelectedMovie(null);
     }
     setToastMessage(`Deleted movie "${deletingMovie.title}"`);
+    recordAuditLog({
+      action: 'DELETE_MOVIE',
+      resource: deletingMovie.title,
+      details: `Deleted movie asset and purged CDN cache reference`,
+      result: 'SUCCESS',
+    });
     setDeletingMovie(null);
   };
 
@@ -321,6 +340,12 @@ export default function MoviesPage() {
         localStorage.setItem(STORAGE_MOVIES_KEY, JSON.stringify(MOCK_MOVIES));
       }
       setToastMessage('Movie catalog restored to defaults');
+      recordAuditLog({
+        action: 'RESET_CATALOG',
+        resource: 'Movie Catalog Rail',
+        details: 'Restored movie catalog to default seed dataset',
+        result: 'SUCCESS',
+      });
     }
   };
 
@@ -468,7 +493,6 @@ export default function MoviesPage() {
     <div className="min-h-screen bg-[#050505] pb-12">
       <AdminHeader
         title="Content Catalog & Movie Assets"
-        subtitle={`Manage ${totalMovies} multi-language films, 4K UHD masters, completion metrics, and featured carousel pins`}
         actions={
           <div className="flex items-center gap-2">
             <button

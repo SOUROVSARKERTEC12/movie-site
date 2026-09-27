@@ -28,24 +28,24 @@ export const StatCard: React.FC<StatCardProps> = ({
           <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
             {title}
           </p>
-          <h3 className="text-2xl sm:text-3xl font-black text-white mt-1 tracking-tight">
+          <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-white mt-1 tracking-tight font-mono">
             {value}
           </h3>
         </div>
         {Icon && (
-          <div className="p-2.5 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-300">
-            <Icon className="w-5 h-5" />
+          <div className="p-2 sm:p-2.5 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-300 shrink-0">
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         )}
       </div>
 
       {/* Bottom row: trend or subtitle */}
       {(change || subtitle) && (
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-900">
-          <div className="flex items-center gap-1.5 text-xs font-medium">
+        <div className="flex items-center justify-between flex-wrap gap-1.5 mt-4 pt-3 border-t border-neutral-900">
+          <div className="flex items-center gap-1.5 text-xs font-medium min-w-0 flex-1">
             {change && (
               <span
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-bold ${
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-bold shrink-0 text-[10px] sm:text-xs ${
                   trend === 'up'
                     ? 'text-emerald-400 bg-emerald-500/10'
                     : trend === 'down'
@@ -60,7 +60,7 @@ export const StatCard: React.FC<StatCardProps> = ({
               </span>
             )}
             {subtitle && (
-              <span className="text-neutral-500 text-[11px] truncate">
+              <span className="text-neutral-500 text-[11px] truncate min-w-0" title={subtitle}>
                 {subtitle}
               </span>
             )}

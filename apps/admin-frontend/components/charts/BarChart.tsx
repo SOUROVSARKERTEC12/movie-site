@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 
 export interface BarChartItem {
   label: string;
+  shortLabel?: string;
   value: number;
   secondaryValue?: number;
   color?: string;
@@ -46,17 +47,17 @@ export const BarChart: React.FC<BarChartProps> = ({
   const step = chartWidth / data.length;
 
   return (
-    <div className="w-full bg-[#0c0c0c] border border-neutral-800/80 rounded-xl p-4 sm:p-5 select-none">
+    <div className="w-full bg-[#0c0c0c] border border-neutral-800/80 rounded-xl p-4 sm:p-5 select-none flex flex-col justify-between">
       {(title || subtitle) && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-4 min-h-[44px]">
           <div>
             {title && <h4 className="text-sm font-bold text-white tracking-wide">{title}</h4>}
             {subtitle && <p className="text-xs text-neutral-400 mt-0.5">{subtitle}</p>}
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             {hoverIndex !== null ? (
-              <div>
-                <span className="text-xs text-neutral-400 mr-2">{data[hoverIndex].label}:</span>
+              <div className="flex items-center sm:justify-end gap-1.5">
+                <span className="text-xs text-neutral-400 truncate max-w-[140px]">{data[hoverIndex].label}:</span>
                 <span className="text-sm font-extrabold text-white font-mono">
                   {valuePrefix}
                   {data[hoverIndex].value.toLocaleString()}
@@ -130,13 +131,13 @@ export const BarChart: React.FC<BarChartProps> = ({
                 <text
                   x={x + barWidth / 2}
                   y={height - 10}
-                  fill={isHovered ? '#ffffff' : '#777777'}
+                  fill={isHovered ? '#ffffff' : '#888888'}
                   fontSize="10"
                   textAnchor="middle"
                   fontFamily="sans-serif"
                   fontWeight={isHovered ? 'bold' : 'normal'}
                 >
-                  {item.label}
+                  {item.shortLabel || item.label}
                 </text>
               </g>
             );

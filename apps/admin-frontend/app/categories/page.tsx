@@ -6,25 +6,18 @@ import {
   Layers,
   Film,
   Star,
-  CheckCircle,
   Plus,
   Edit2,
   Trash2,
   Tag,
   Search,
-  Filter,
   FolderTree,
   List,
-  ArrowRight,
   X,
   Check,
   AlertTriangle,
   RotateCcw,
   Tv,
-  ChevronDown,
-  ChevronRight,
-  Eye,
-  Sparkles,
 } from 'lucide-react';
 import { AdminHeader } from '@/components/AdminHeader';
 import { StatCard } from '@/components/StatCard';
@@ -32,7 +25,8 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { DataTable, Column } from '@/components/DataTable';
 import { MOCK_MOVIES } from '@/data/mockMovies';
 import { INITIAL_CATEGORIES } from '@/data/mockCategories';
-import { CategoryModel, Movie, MovieQuality } from '@movie-site/shared';
+import { CategoryModel, Movie } from '@movie-site/shared';
+import { recordAuditLog } from '@/lib/auditLogger';
 
 const STORAGE_CATEGORIES_KEY = 'cineblack_admin_categories';
 const STORAGE_MOVIES_KEY = 'cineblack_admin_movies';
@@ -90,31 +84,35 @@ export default function CategoriesPage() {
   // Load from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedCats = localStorage.getItem(STORAGE_CATEGORIES_KEY);
-      if (savedCats) {
-        try {
-          const parsed = JSON.parse(savedCats);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setCategories(parsed);
+      const timer = setTimeout(() => {
+        const savedCats = localStorage.getItem(STORAGE_CATEGORIES_KEY);
+        if (savedCats) {
+          try {
+            const parsed = JSON.parse(savedCats);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCategories(parsed);
+            }
+          } catch (e) {
+            console.error(e);
           }
-        } catch (e) {
-          console.error(e);
         }
-      }
 
-      const savedMovies = localStorage.getItem(STORAGE_MOVIES_KEY);
-      if (savedMovies) {
-        try {
-          const parsed = JSON.parse(savedMovies);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setMovies(parsed);
+        const savedMovies = localStorage.getItem(STORAGE_MOVIES_KEY);
+        if (savedMovies) {
+          try {
+            const parsed = JSON.parse(savedMovies);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setMovies(parsed);
+            }
+          } catch (e) {
+            console.error(e);
           }
-        } catch (e) {
-          console.error(e);
         }
-      }
 
-      setIsLoaded(true);
+        setIsLoaded(true);
+      }, 0);
+
+      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -201,6 +199,12 @@ export default function CategoriesPage() {
     setCategories([...categories, newCat]);
     setIsCreateCatModalOpen(false);
     setToastMessage(`Created category "${newCat.name}" with ${newCat.subcategories.length} subcategories`);
+    recordAuditLog({
+      action: 'CREATE_CATEGORY',
+      resource: newCat.name,
+      details: `Created new category rail /${newCat.slug} with ${newCat.subcategories.length} subcategories`,
+      result: 'SUCCESS',
+    });
   };
 
   // Save Edited Category
@@ -234,6 +238,12 @@ export default function CategoriesPage() {
 
     setEditingCategory(null);
     setToastMessage(`Updated category "${updated.name}"`);
+    recordAuditLog({
+      action: 'UPDATE_CATEGORY',
+      resource: updated.name,
+      details: `Modified category metadata, slug /${updated.slug}, and accent styling`,
+      result: 'SUCCESS',
+    });
   };
 
   // Delete Category
@@ -241,6 +251,12 @@ export default function CategoriesPage() {
     if (!deletingCategory) return;
     setCategories(categories.filter((c) => c.id !== deletingCategory.id));
     setToastMessage(`Deleted category "${deletingCategory.name}"`);
+    recordAuditLog({
+      action: 'DELETE_CATEGORY',
+      resource: deletingCategory.name,
+      details: `Removed category rail and unlinked associated movie assets`,
+      result: 'SUCCESS',
+    });
     setDeletingCategory(null);
   };
 
@@ -323,9 +339,6 @@ export default function CategoriesPage() {
   const totalFilms = movies.length;
   const fourKTotal = movies.filter((m) => m.quality === '4K UHD').length;
   const totalSubcategories = categories.reduce((acc, c) => acc + c.subcategories.length, 0);
-  const avgRating = totalFilms > 0
-    ? (movies.reduce((acc, m) => acc + m.rating, 0) / totalFilms).toFixed(1)
-    : '0.0';
 
   // Helper to get subcategory for a movie (explicit or primary genre)
   const getMovieSubcategory = (movie: Movie): string => {
@@ -541,7 +554,6 @@ export default function CategoriesPage() {
     <div className="min-h-screen bg-[#050505] pb-12">
       <AdminHeader
         title="Category & Subcategory Intelligence"
-        subtitle="Manage taxonomy rails, subcategory tags, and explore movies by Category or Category + Subcategory"
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -714,7 +726,6 @@ export default function CategoriesPage() {
               .map((cat) => {
                 const catMovies = filteredMovies.filter((m) => m.category === cat.name);
                 const totalInCat = catMovies.length;
-                const fourKInCat = catMovies.filter((m) => m.quality === '4K UHD').length;
                 const style = getColorClass(cat.color);
 
                 return (
