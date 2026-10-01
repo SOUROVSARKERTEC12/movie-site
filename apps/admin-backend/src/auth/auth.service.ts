@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { AdminsRepository } from '../admins/admins.repository';
+import { AdminResponseDto } from '../admins/dto/admin.dto';
 
 @Injectable()
 export class AuthService {
@@ -35,7 +36,7 @@ export class AuthService {
     throw new UnauthorizedException('Invalid credentials');
   }
 
-  async getProfile(userId: string) {
+  async getProfile(userId: string): Promise<AdminResponseDto> {
     const admin = await this.adminsRepository.findOne(userId);
     if (!admin) {
       // Fallback for mock test user
@@ -45,8 +46,11 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
     
-    const result = { ...admin };
-    delete result.passwordHash;
-    return result;
+    return {
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      createdAt: admin.createdAt,
+    };
   }
 }

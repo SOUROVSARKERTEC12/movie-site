@@ -15,6 +15,7 @@ describe('Users CRUD (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api/v1');
     await app.init();
 
     const loginRes = await request(app.getHttpServer())

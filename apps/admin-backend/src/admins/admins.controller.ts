@@ -1,31 +1,30 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards } from '@nestjs/common';
 import { AdminsService } from './admins.service';
 import { AuthGuard } from '@nestjs/passport';
-import { CreateAdminDto, UpdateAdminDto } from './dto/admin.dto';
-import { SafeAdmin } from '../database/schema';
+import { CreateAdminDto, UpdateAdminDto, AdminResponseDto } from './dto/admin.dto';
 
-@Controller('api/v1/admins')
+@Controller('admins')
 @UseGuards(AuthGuard('jwt'))
 export class AdminsController {
   constructor(private readonly adminsService: AdminsService) {}
 
   @Post()
-  create(@Body() createAdminDto: CreateAdminDto): Promise<SafeAdmin> {
+  create(@Body() createAdminDto: CreateAdminDto): Promise<AdminResponseDto> {
     return this.adminsService.create(createAdminDto);
   }
 
   @Get()
-  findAll(): Promise<SafeAdmin[]> {
+  findAll(): Promise<AdminResponseDto[]> {
     return this.adminsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<SafeAdmin> {
+  findOne(@Param('id') id: string): Promise<AdminResponseDto> {
     return this.adminsService.findOne(id);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateAdminDto: UpdateAdminDto): Promise<SafeAdmin> {
+  update(@Param('id') id: string, @Body() updateAdminDto: UpdateAdminDto): Promise<AdminResponseDto> {
     return this.adminsService.update(id, updateAdminDto);
   }
 

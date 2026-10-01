@@ -1,31 +1,30 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { AuthGuard } from '@nestjs/passport';
-import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
-import { Category } from '../database/schema';
+import { CreateCategoryDto, UpdateCategoryDto, CategoryResponseDto } from './dto/category.dto';
 
-@Controller('api/v1/categories')
+@Controller('categories')
 @UseGuards(AuthGuard('jwt'))
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Post()
-  create(@Body() createCategoryDto: CreateCategoryDto): Promise<Category> {
+  create(@Body() createCategoryDto: CreateCategoryDto): Promise<CategoryResponseDto> {
     return this.categoriesService.create(createCategoryDto);
   }
 
   @Get()
-  findAll(): Promise<Category[]> {
+  findAll(): Promise<CategoryResponseDto[]> {
     return this.categoriesService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<Category> {
+  findOne(@Param('id') id: string): Promise<CategoryResponseDto> {
     return this.categoriesService.findOne(id);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto): Promise<Category> {
+  update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto): Promise<CategoryResponseDto> {
     return this.categoriesService.update(id, updateCategoryDto);
   }
 

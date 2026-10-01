@@ -15,3 +15,16 @@ export const updateUserSchema = z.object({
   status: z.string().optional(),
 });
 export class UpdateUserDto extends createZodDto(updateUserSchema) {}
+
+export const userResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  role: z.string(),
+  status: z.string(),
+  totalWatchTimeHours: z.number().nullable().optional(),
+  moviesWatchedCount: z.number().nullable().optional(),
+  createdAt: z.date().nullable().optional(),
+});
+
+export type UserResponseDto = z.infer<typeof userResponseSchema>;

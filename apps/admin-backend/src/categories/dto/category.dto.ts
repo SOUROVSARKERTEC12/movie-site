@@ -17,3 +17,14 @@ export const updateCategorySchema = z.object({
   isCustom: z.boolean().optional(),
 });
 export class UpdateCategoryDto extends createZodDto(updateCategorySchema) {}
+
+export const categoryResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().nullable().optional(),
+  color: z.string().nullable().optional(),
+  isCustom: z.boolean().nullable().optional(),
+});
+
+export type CategoryResponseDto = z.infer<typeof categoryResponseSchema>;

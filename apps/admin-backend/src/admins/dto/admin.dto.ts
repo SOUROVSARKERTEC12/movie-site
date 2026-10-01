@@ -11,3 +11,12 @@ export class CreateAdminDto extends createZodDto(createAdminSchema) {}
 
 export const updateAdminSchema = createAdminSchema.partial();
 export class UpdateAdminDto extends createZodDto(updateAdminSchema) {}
+
+export const adminResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  createdAt: z.date().nullable().optional(),
+});
+
+export type AdminResponseDto = z.infer<typeof adminResponseSchema>;
