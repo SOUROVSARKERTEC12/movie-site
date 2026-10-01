@@ -29,6 +29,7 @@
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.3",
     "nestjs-zod": "^5.5.0",
+    "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

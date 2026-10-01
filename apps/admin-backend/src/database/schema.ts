@@ -86,3 +86,9 @@ export const userActivities = sqliteTable('user_activities', {
   sessionId: text('session_id'),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
+
+export type Admin = typeof admins.$inferSelect;
+export type User = typeof users.$inferSelect;
+export type Category = typeof categories.$inferSelect;
+export type SafeAdmin = Omit<Admin, 'passwordHash'>;
+
