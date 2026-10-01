@@ -225,3 +225,42 @@ export interface AuditLogEntry {
   result: 'SUCCESS' | 'FAILED';
   details: string;
 }
+
+export type StoragePathCategory =
+  | 'Movies & Series'
+  | 'HLS Chunks / Transcode'
+  | 'Trailers & Previews'
+  | 'Backups'
+  | 'General Media';
+
+export type StoragePathStatus = 'Active' | 'Warning' | 'Full' | 'Read-Only' | 'Offline';
+
+export interface DiskStoragePath {
+  id: string;
+  name: string;
+  path: string;
+  category: StoragePathCategory;
+  maxLimitGb: number;
+  usedGb: number;
+  status: StoragePathStatus;
+  isDefault?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminProfileConfig {
+  id: string;
+  name: string;
+  email: string;
+  title: string;
+  avatar: string;
+  role: 'super_admin' | 'admin';
+  phone?: string;
+  department?: string;
+  location?: string;
+  bio?: string;
+  notificationsEnabled: boolean;
+  twoFactorEnabled: boolean;
+  lastUpdated: string;
+}
+

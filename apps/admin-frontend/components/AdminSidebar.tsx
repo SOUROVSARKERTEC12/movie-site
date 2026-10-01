@@ -18,6 +18,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   LucideIcon,
+  Settings,
 } from 'lucide-react';
 import { useSidebar } from './SidebarContext';
 
@@ -36,6 +37,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Categories', href: '/categories', icon: Layers },
   { label: 'Devices & Platforms', href: '/devices', icon: MonitorSmartphone },
   { label: 'Activity Logs', href: '/logs', icon: FileText },
+  { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export const AdminSidebar: React.FC = () => {
