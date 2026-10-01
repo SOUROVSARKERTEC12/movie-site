@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Bell, Wifi, PanelLeft, Settings } from 'lucide-react';
-import { StatusBadge } from './StatusBadge';
+import { Bell, PanelLeft, Settings } from 'lucide-react';
 import { useSidebar } from './SidebarContext';
 import { getAdminProfile, DEFAULT_ADMIN_PROFILE } from '@/data/mockStorage';
 import { AdminProfileConfig } from '@movie-site/shared';
@@ -62,14 +60,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       <div className="flex items-center gap-3 sm:gap-4">
         {actions}
 
-        {/* Global Cluster Status Indicator */}
-        <div className="hidden md:flex items-center gap-2 bg-neutral-900/90 border border-neutral-800 px-3 py-1 rounded-full text-xs">
-          <Wifi className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-neutral-300 font-medium">CDN Global</span>
-          <span className="w-1 h-1 rounded-full bg-neutral-600" />
-          <span className="text-emerald-400 font-mono font-bold">18ms p50</span>
-          <StatusBadge status="Healthy" variant="healthy" />
-        </div>
+
 
         {/* Quick Settings Shortcut */}
         <Link
@@ -98,24 +89,11 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           title="Manage Profile & System Settings"
         >
           <div className="relative w-8 h-8 rounded-full overflow-hidden bg-neutral-800 border border-neutral-700 flex items-center justify-center font-bold text-xs text-white group-hover:border-neutral-500 transition-colors flex-shrink-0">
-            {profile.avatar ? (
-              <Image
-                src={profile.avatar}
-                alt={profile.name}
-                fill
-                sizes="32px"
-                className="object-cover"
-              />
-            ) : (
-              <span>{profile.name.substring(0, 2).toUpperCase()}</span>
-            )}
+            <span>{profile.name.substring(0, 2).toUpperCase()}</span>
           </div>
           <div className="hidden lg:block text-left">
             <p className="text-xs font-bold text-white leading-tight group-hover:text-neutral-200 transition-colors truncate max-w-[130px]">
               {profile.name}
-            </p>
-            <p className="text-[10px] text-neutral-400 font-mono truncate max-w-[130px]">
-              {profile.title}
             </p>
           </div>
         </Link>
