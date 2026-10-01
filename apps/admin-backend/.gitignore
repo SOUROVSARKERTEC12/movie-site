@@ -35,14 +35,12 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # Environment Variables
-.env
-.env.test
-.env.production
-.env.local
+.env*
+!.env.example
 
-# SQLite Database (DO NOT COMMIT DEV DB)
-dev.db
-dev.db-journal
+# SQLite Database (DO NOT COMMIT DEV/TEST DBs)
+*.db
+*.db-journal
 *.sqlite
 *.sqlite3
 
