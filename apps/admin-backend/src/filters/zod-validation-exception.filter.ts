@@ -11,9 +11,11 @@ export class ZodValidationExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
     const zodError = exception.getZodError() as ZodError;
 
+    const firstErrorMessage = zodError.issues.length > 0 ? zodError.issues[0].message : 'Validation failed';
+
     response.status(status).json({
       statusCode: status,
-      message: 'Validation failed',
+      message: firstErrorMessage,
       errors: zodError.issues,
     });
   }
