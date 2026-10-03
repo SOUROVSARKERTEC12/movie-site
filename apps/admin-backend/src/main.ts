@@ -8,7 +8,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
 
-  const config = new DocumentBuilder()
+  const configService = app.get(ConfigService);
+  const swaggerUrls = configService.get<string[]>('SWAGGER_SERVER_URLS') || ['http://localhost:3000'];
+
+  const configBuilder = new DocumentBuilder()
     .setTitle('CineBlack Enterprise API')
     .setDescription(`
       Core Administrative API for the CineBlack Platform.
@@ -30,9 +33,14 @@ async function bootstrap() {
         in: 'header'
       },
       'JWT-auth' // This name must match the @ApiBearerAuth() decorators
-    )
-    .addServer('http://localhost:3000', 'Local Development Server')
-    .build();
+    );
+
+  // Add all swagger servers from env
+  swaggerUrls.forEach((url) => {
+    configBuilder.addServer(url, 'Environment Server');
+  });
+
+  const config = configBuilder.build();
     
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, cleanupOpenApiDoc(document), {
@@ -44,7 +52,6 @@ async function bootstrap() {
     }
   });
 
-  const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || 3000;
 
   await app.listen(port);

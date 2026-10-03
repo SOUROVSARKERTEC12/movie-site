@@ -18,18 +18,12 @@ export class AuthService {
 
     if (admin) {
       // Very simple mock password check (assuming plain text or seeded for tests)
+      // Note: In production, use bcrypt.compare(loginDto.password, admin.passwordHash)
       if (admin.passwordHash !== loginDto.password) {
         throw new UnauthorizedException('Invalid credentials');
       }
       return {
         access_token: this.jwtService.sign({ sub: admin.id, email: admin.email }),
-      };
-    }
-
-    // Fallback for tests if db is empty but we expect the seeded user
-    if (loginDto.email === 'admin@cineblack.com' && loginDto.password === 'password123') {
-      return {
-        access_token: this.jwtService.sign({ sub: 'mock-id', email: loginDto.email }),
       };
     }
 
@@ -39,10 +33,6 @@ export class AuthService {
   async getProfile(userId: string): Promise<AdminResponseDto> {
     const admin = await this.adminsRepository.findOne(userId);
     if (!admin) {
-      // Fallback for mock test user
-      if (userId === 'mock-id') {
-        return { id: 'mock-id', email: 'admin@cineblack.com', name: 'Mock Admin' };
-      }
       throw new UnauthorizedException('User not found');
     }
     
