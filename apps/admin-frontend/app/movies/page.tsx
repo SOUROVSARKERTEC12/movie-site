@@ -25,6 +25,7 @@ import { StatCard } from '@/components/StatCard';
 import { MOCK_MOVIES } from '@/data/mockMovies';
 import { Movie, MovieCategory, MovieQuality } from '@movie-site/shared';
 import { recordAuditLog } from '@/lib/auditLogger';
+import { api } from '@/lib/api';
 
 const STORAGE_MOVIES_KEY = 'cineblack_admin_movies';
 
@@ -116,28 +117,58 @@ export default function MoviesPage() {
     }
   }, [toastMessage]);
 
-  // Load movies from localStorage or fallback to MOCK_MOVIES
+  // Load movies from Backend API (with fallback to localStorage or MOCK_MOVIES)
   useEffect(() => {
-    const timer = setTimeout(() => {
+    let isMounted = true;
+    const loadMovies = async () => {
+      try {
+        const apiMovies = await api.movies.findAll();
+        if (isMounted && apiMovies && apiMovies.length > 0) {
+          // Merge with default mock fields for genre/cast if not in backend schema
+          const mapped: Movie[] = apiMovies.map((m: any) => ({
+            ...m,
+            genre: m.genre || ['Feature', m.category || 'Cinema'],
+            cast: m.cast || ['Cast TBA'],
+            totalViews: m.totalViews || 0,
+            completionRate: m.completionRate || 85,
+            poster: m.poster || DEFAULT_MOVIE_FORM.poster,
+            backdrop: m.backdrop || m.poster || DEFAULT_MOVIE_FORM.backdrop,
+            videoUrl: m.videoUrl || DEFAULT_MOVIE_FORM.videoUrl,
+          }));
+          setMovies(mapped);
+          setIsLoaded(true);
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to fetch movies from backend API, falling back to local storage', err);
+      }
+
       if (typeof window !== 'undefined') {
         const saved = localStorage.getItem(STORAGE_MOVIES_KEY);
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              setMovies(parsed);
-              setIsLoaded(true);
+              if (isMounted) setMovies(parsed);
+              if (isMounted) setIsLoaded(true);
               return;
             }
           } catch (e) {
             console.error('Failed to parse saved movies from localStorage', e);
           }
         }
+      }
+
+      if (isMounted) {
         setMovies(MOCK_MOVIES);
         setIsLoaded(true);
       }
-    }, 0);
-    return () => clearTimeout(timer);
+    };
+
+    loadMovies();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Save movies to localStorage whenever state changes
@@ -197,7 +228,7 @@ export default function MoviesPage() {
   };
 
   // Handle Create Movie
-  const handleCreateMovie = (e: React.FormEvent) => {
+  const handleCreateMovie = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
       setFormError('Movie title is required');
@@ -212,54 +243,54 @@ export default function MoviesPage() {
       return;
     }
 
-    const slug = formData.title
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    const newId = `${formData.category.toLowerCase().replace(/\s+/g, '-')}-${slug || Date.now().toString(36)}`;
-
     const castList = formData.cast
       .split(',')
       .map((c) => c.trim())
       .filter(Boolean);
 
-    const newMovie: Movie = {
-      id: newId,
-      title: formData.title.trim(),
-      description: formData.description.trim(),
-      category: formData.category,
-      subcategory: formData.subcategory.trim() || undefined,
-      genre: formData.genre,
-      releaseYear: Number(formData.releaseYear) || new Date().getFullYear(),
-      rating: Number(formData.rating) || 7.0,
-      duration: formData.duration.trim() || '2h 00m',
-      language: formData.language.trim() || 'English',
-      quality: formData.quality,
-      poster: formData.poster.trim() || DEFAULT_MOVIE_FORM.poster,
-      backdrop: formData.backdrop.trim() || formData.poster.trim() || DEFAULT_MOVIE_FORM.backdrop,
-      videoUrl: formData.videoUrl.trim() || DEFAULT_MOVIE_FORM.videoUrl,
-      director: formData.director.trim() || 'Unknown Director',
-      cast: castList.length > 0 ? castList : ['Cast TBA'],
-      status: formData.status,
-      featured: formData.status === 'Featured',
-      totalViews: 0,
-      completionRate: 85,
-    };
+    try {
+      const created = await api.movies.create({
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        subcategory: formData.subcategory.trim() || undefined,
+        releaseYear: Number(formData.releaseYear) || new Date().getFullYear(),
+        rating: Number(formData.rating) || 7.0,
+        duration: formData.duration.trim() || '2h 00m',
+        language: formData.language.trim() || 'English',
+        quality: formData.quality,
+        poster: formData.poster.trim() || DEFAULT_MOVIE_FORM.poster,
+        backdrop: formData.backdrop.trim() || formData.poster.trim() || DEFAULT_MOVIE_FORM.backdrop,
+        videoUrl: formData.videoUrl.trim() || DEFAULT_MOVIE_FORM.videoUrl,
+        director: formData.director.trim() || 'Unknown Director',
+        status: formData.status,
+      });
 
-    setMovies([newMovie, ...movies]);
-    setIsCreateModalOpen(false);
-    setToastMessage(`Created movie "${newMovie.title}"`);
-    recordAuditLog({
-      action: 'CREATE_MOVIE',
-      resource: newMovie.title,
-      details: `Created new ${newMovie.category} title (${newMovie.quality}) directed by ${newMovie.director}`,
-      result: 'SUCCESS',
-    });
+      const newMovie: Movie = {
+        ...(created as any),
+        genre: formData.genre,
+        cast: castList.length > 0 ? castList : ['Cast TBA'],
+        totalViews: 0,
+        completionRate: 85,
+        featured: formData.status === 'Featured',
+      };
+
+      setMovies([newMovie, ...movies]);
+      setIsCreateModalOpen(false);
+      setToastMessage(`Created movie "${newMovie.title}"`);
+      recordAuditLog({
+        action: 'CREATE_MOVIE',
+        resource: newMovie.title,
+        details: `Created new ${newMovie.category} title (${newMovie.quality}) directed by ${newMovie.director}`,
+        result: 'SUCCESS',
+      });
+    } catch (err: any) {
+      setFormError(err?.message || 'Failed to create movie on backend');
+    }
   };
 
   // Handle Update Movie
-  const handleUpdateMovie = (e: React.FormEvent) => {
+  const handleUpdateMovie = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMovie) return;
     if (!formData.title.trim()) {
@@ -280,56 +311,82 @@ export default function MoviesPage() {
       .map((c) => c.trim())
       .filter(Boolean);
 
-    const updatedMovie: Movie = {
-      ...editingMovie,
-      title: formData.title.trim(),
-      description: formData.description.trim(),
-      category: formData.category,
-      subcategory: formData.subcategory.trim() || undefined,
-      genre: formData.genre,
-      releaseYear: Number(formData.releaseYear) || editingMovie.releaseYear,
-      rating: Number(formData.rating) || editingMovie.rating,
-      duration: formData.duration.trim() || editingMovie.duration,
-      language: formData.language.trim() || editingMovie.language,
-      quality: formData.quality,
-      poster: formData.poster.trim() || editingMovie.poster,
-      backdrop: formData.backdrop.trim() || editingMovie.backdrop,
-      videoUrl: formData.videoUrl.trim() || editingMovie.videoUrl,
-      director: formData.director.trim() || editingMovie.director,
-      cast: castList.length > 0 ? castList : editingMovie.cast,
-      status: formData.status,
-      featured: formData.status === 'Featured',
-    };
+    try {
+      await api.movies.update(editingMovie.id, {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        subcategory: formData.subcategory.trim() || undefined,
+        releaseYear: Number(formData.releaseYear) || editingMovie.releaseYear,
+        rating: Number(formData.rating) || editingMovie.rating,
+        duration: formData.duration.trim() || editingMovie.duration,
+        language: formData.language.trim() || editingMovie.language,
+        quality: formData.quality,
+        poster: formData.poster.trim() || editingMovie.poster,
+        backdrop: formData.backdrop.trim() || editingMovie.backdrop,
+        videoUrl: formData.videoUrl.trim() || editingMovie.videoUrl,
+        director: formData.director.trim() || editingMovie.director,
+        status: formData.status,
+      });
 
-    setMovies(movies.map((m) => (m.id === editingMovie.id ? updatedMovie : m)));
-    if (selectedMovie?.id === editingMovie.id) {
-      setSelectedMovie(updatedMovie);
+      const updatedMovie: Movie = {
+        ...editingMovie,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        subcategory: formData.subcategory.trim() || undefined,
+        genre: formData.genre,
+        releaseYear: Number(formData.releaseYear) || editingMovie.releaseYear,
+        rating: Number(formData.rating) || editingMovie.rating,
+        duration: formData.duration.trim() || editingMovie.duration,
+        language: formData.language.trim() || editingMovie.language,
+        quality: formData.quality,
+        poster: formData.poster.trim() || editingMovie.poster,
+        backdrop: formData.backdrop.trim() || editingMovie.backdrop,
+        videoUrl: formData.videoUrl.trim() || editingMovie.videoUrl,
+        director: formData.director.trim() || editingMovie.director,
+        cast: castList.length > 0 ? castList : editingMovie.cast,
+        status: formData.status,
+        featured: formData.status === 'Featured',
+      };
+
+      setMovies(movies.map((m) => (m.id === editingMovie.id ? updatedMovie : m)));
+      if (selectedMovie?.id === editingMovie.id) {
+        setSelectedMovie(updatedMovie);
+      }
+      setEditingMovie(null);
+      setToastMessage(`Updated movie "${updatedMovie.title}"`);
+      recordAuditLog({
+        action: 'UPDATE_MOVIE',
+        resource: updatedMovie.title,
+        details: `Updated metadata, status (${updatedMovie.status}), and video quality (${updatedMovie.quality})`,
+        result: 'SUCCESS',
+      });
+    } catch (err: any) {
+      setFormError(err?.message || 'Failed to update movie on backend');
     }
-    setEditingMovie(null);
-    setToastMessage(`Updated movie "${updatedMovie.title}"`);
-    recordAuditLog({
-      action: 'UPDATE_MOVIE',
-      resource: updatedMovie.title,
-      details: `Updated metadata, status (${updatedMovie.status}), and video quality (${updatedMovie.quality})`,
-      result: 'SUCCESS',
-    });
   };
 
   // Handle Delete Movie
-  const handleDeleteMovie = () => {
+  const handleDeleteMovie = async () => {
     if (!deletingMovie) return;
-    setMovies(movies.filter((m) => m.id !== deletingMovie.id));
-    if (selectedMovie?.id === deletingMovie.id) {
-      setSelectedMovie(null);
+    try {
+      await api.movies.delete(deletingMovie.id);
+      setMovies(movies.filter((m) => m.id !== deletingMovie.id));
+      if (selectedMovie?.id === deletingMovie.id) {
+        setSelectedMovie(null);
+      }
+      setToastMessage(`Deleted movie "${deletingMovie.title}"`);
+      recordAuditLog({
+        action: 'DELETE_MOVIE',
+        resource: deletingMovie.title,
+        details: `Deleted movie asset and purged CDN cache reference`,
+        result: 'SUCCESS',
+      });
+      setDeletingMovie(null);
+    } catch (err: any) {
+      setToastMessage(err?.message || 'Failed to delete movie on backend');
     }
-    setToastMessage(`Deleted movie "${deletingMovie.title}"`);
-    recordAuditLog({
-      action: 'DELETE_MOVIE',
-      resource: deletingMovie.title,
-      details: `Deleted movie asset and purged CDN cache reference`,
-      result: 'SUCCESS',
-    });
-    setDeletingMovie(null);
   };
 
   // Reset to default seed

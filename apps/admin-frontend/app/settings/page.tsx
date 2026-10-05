@@ -13,6 +13,8 @@ import {
   DEFAULT_ADMIN_PROFILE,
 } from '@/data/mockStorage';
 
+import { api } from '@/lib/api';
+
 interface PathFormData {
   name: string;
   path: string;
@@ -46,20 +48,47 @@ export default function SettingsContent() {
   }, [toast]);
 
   useEffect(() => {
-    const initTimer = setTimeout(() => {
-      setProfileForm(getAdminProfile());
-      setDiskPaths(getDiskStoragePaths());
-      setIsLoaded(true);
-    }, 0);
-    const handleProfileUpdate = () => setProfileForm(getAdminProfile());
-    const handleStorageUpdate = () => setDiskPaths(getDiskStoragePaths());
+    let isMounted = true;
 
-    window.addEventListener('cineblack_profile_updated', handleProfileUpdate);
-    window.addEventListener('cineblack_storage_updated', handleStorageUpdate);
+    const loadData = async () => {
+      // 1. Load Admin Profile
+      try {
+        const prof = await api.auth.getProfile();
+        if (isMounted && prof) {
+          setProfileForm({
+            name: prof.name,
+            email: prof.email,
+          });
+        }
+      } catch {
+        if (isMounted) setProfileForm(getAdminProfile());
+      }
+
+      // 2. Load Storage Paths
+      try {
+        const paths = await api.storage.getPaths();
+        if (isMounted && paths && paths.length > 0) {
+          const mapped: DiskStoragePath[] = paths.map((p) => ({
+            id: p.id,
+            name: p.name,
+            path: p.path,
+            maxLimitGb: p.maxLimitGb,
+            usedGb: p.usedGb || 0,
+          }));
+          setDiskPaths(mapped);
+        } else if (isMounted) {
+          setDiskPaths(getDiskStoragePaths());
+        }
+      } catch {
+        if (isMounted) setDiskPaths(getDiskStoragePaths());
+      } finally {
+        if (isMounted) setIsLoaded(true);
+      }
+    };
+
+    loadData();
     return () => {
-      clearTimeout(initTimer);
-      window.removeEventListener('cineblack_profile_updated', handleProfileUpdate);
-      window.removeEventListener('cineblack_storage_updated', handleStorageUpdate);
+      isMounted = false;
     };
   }, []);
 
@@ -73,7 +102,7 @@ export default function SettingsContent() {
     setToast({ message: 'Profile updated successfully!', type: 'success' });
   };
 
-  const handleAddPath = (e: React.FormEvent) => {
+  const handleAddPath = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pathForm.name.trim() || !pathForm.path.trim()) {
       setToast({ message: 'Please provide a name and path.', type: 'error' });
@@ -84,26 +113,37 @@ export default function SettingsContent() {
       return;
     }
 
-    const newPath: DiskStoragePath = {
-      id: `disk_${Date.now()}`,
-      name: pathForm.name.trim(),
-      path: pathForm.path.trim(),
-      maxLimitGb: pathForm.maxLimitValue,
-      usedGb: 0, // Starts at 0 for V1 simplicity
-    };
+    try {
+      const created = await api.storage.createPath({
+        name: pathForm.name.trim(),
+        path: pathForm.path.trim(),
+        maxLimitGb: Number(pathForm.maxLimitValue) || 100,
+      });
 
-    const updatedPaths = [...diskPaths, newPath];
-    saveDiskStoragePaths(updatedPaths);
-    setDiskPaths(updatedPaths);
-    setPathForm(DEFAULT_PATH_FORM);
-    setToast({ message: 'Storage path added successfully.', type: 'success' });
+      const newPath: DiskStoragePath = {
+        id: created.id,
+        name: created.name,
+        path: created.path,
+        maxLimitGb: created.maxLimitGb,
+        usedGb: created.usedGb || 0,
+      };
+
+      setDiskPaths((prev) => [...prev, newPath]);
+      setPathForm(DEFAULT_PATH_FORM);
+      setToast({ message: 'Storage path registered with backend.', type: 'success' });
+    } catch (err: any) {
+      setToast({ message: err?.message || 'Failed to add storage path', type: 'error' });
+    }
   };
 
-  const handleDeletePath = (id: string) => {
-    const remaining = diskPaths.filter((p) => p.id !== id);
-    saveDiskStoragePaths(remaining);
-    setDiskPaths(remaining);
-    setToast({ message: 'Storage path deleted.', type: 'success' });
+  const handleDeletePath = async (id: string) => {
+    try {
+      await api.storage.deletePath(id);
+      setDiskPaths((prev) => prev.filter((p) => p.id !== id));
+      setToast({ message: 'Storage path deleted from backend.', type: 'success' });
+    } catch (err: any) {
+      setToast({ message: err?.message || 'Failed to delete storage path', type: 'error' });
+    }
   };
 
   if (!isLoaded) return null;

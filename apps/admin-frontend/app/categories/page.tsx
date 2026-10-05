@@ -27,6 +27,7 @@ import { MOCK_MOVIES } from '@/data/mockMovies';
 import { INITIAL_CATEGORIES } from '@/data/mockCategories';
 import { CategoryModel, Movie } from '@movie-site/shared';
 import { recordAuditLog } from '@/lib/auditLogger';
+import { api } from '@/lib/api';
 
 const STORAGE_CATEGORIES_KEY = 'cineblack_admin_categories';
 const STORAGE_MOVIES_KEY = 'cineblack_admin_movies';
@@ -81,39 +82,68 @@ export default function CategoriesPage() {
     }
   }, [toastMessage]);
 
-  // Load from localStorage
+  // Load from Backend API (with fallback to localStorage / mocks)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const timer = setTimeout(() => {
-        const savedCats = localStorage.getItem(STORAGE_CATEGORIES_KEY);
-        if (savedCats) {
-          try {
-            const parsed = JSON.parse(savedCats);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setCategories(parsed);
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        const [apiCats, apiMovies] = await Promise.all([
+          api.categories.findAll().catch(() => null),
+          api.movies.findAll().catch(() => null),
+        ]);
+
+        if (isMounted && apiCats && apiCats.length > 0) {
+          const mappedCats: CategoryModel[] = apiCats.map((c) => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            description: c.description || 'Curated film collection',
+            color: c.color || 'blue',
+            borderAccent: `border-${c.color || 'blue'}-500/40`,
+            subcategories: [],
+            isCustom: !!c.isCustom,
+          }));
+          setCategories(mappedCats);
+        } else if (typeof window !== 'undefined') {
+          const savedCats = localStorage.getItem(STORAGE_CATEGORIES_KEY);
+          if (savedCats) {
+            try {
+              const parsed = JSON.parse(savedCats);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setCategories(parsed);
+              }
+            } catch (e) {
+              console.error(e);
             }
-          } catch (e) {
-            console.error(e);
           }
         }
 
-        const savedMovies = localStorage.getItem(STORAGE_MOVIES_KEY);
-        if (savedMovies) {
-          try {
-            const parsed = JSON.parse(savedMovies);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setMovies(parsed);
+        if (isMounted && apiMovies && apiMovies.length > 0) {
+          setMovies(apiMovies as any);
+        } else if (typeof window !== 'undefined') {
+          const savedMovies = localStorage.getItem(STORAGE_MOVIES_KEY);
+          if (savedMovies) {
+            try {
+              const parsed = JSON.parse(savedMovies);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setMovies(parsed);
+              }
+            } catch (e) {
+              console.error(e);
             }
-          } catch (e) {
-            console.error(e);
           }
         }
+      } catch (err) {
+        console.error('Error fetching categories or movies:', err);
+      } finally {
+        if (isMounted) setIsLoaded(true);
+      }
+    };
 
-        setIsLoaded(true);
-      }, 0);
-
-      return () => clearTimeout(timer);
-    }
+    loadData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Save Categories to localStorage
@@ -171,7 +201,7 @@ export default function CategoriesPage() {
   };
 
   // Save New Category
-  const handleCreateCategory = (e: React.FormEvent) => {
+  const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!catFormName.trim()) {
       setFormError('Category name is required');
@@ -185,30 +215,42 @@ export default function CategoriesPage() {
 
     const slug = catFormSlug.trim() || catFormName.toLowerCase().replace(/\s+/g, '-');
 
-    const newCat: CategoryModel = {
-      id: `cat_${Date.now().toString(36)}`,
-      name: catFormName.trim(),
-      slug: slug,
-      description: catFormDesc.trim() || 'Curated film collection',
-      color: catFormColor,
-      borderAccent: `border-${catFormColor}-500/40`,
-      subcategories: catFormSubcategories,
-      isCustom: true,
-    };
+    try {
+      const created = await api.categories.create({
+        name: catFormName.trim(),
+        slug,
+        description: catFormDesc.trim() || 'Curated film collection',
+        color: catFormColor,
+        isCustom: true,
+      });
 
-    setCategories([...categories, newCat]);
-    setIsCreateCatModalOpen(false);
-    setToastMessage(`Created category "${newCat.name}" with ${newCat.subcategories.length} subcategories`);
-    recordAuditLog({
-      action: 'CREATE_CATEGORY',
-      resource: newCat.name,
-      details: `Created new category rail /${newCat.slug} with ${newCat.subcategories.length} subcategories`,
-      result: 'SUCCESS',
-    });
+      const newCat: CategoryModel = {
+        id: created.id,
+        name: created.name,
+        slug: created.slug,
+        description: created.description || 'Curated film collection',
+        color: created.color || catFormColor,
+        borderAccent: `border-${created.color || catFormColor}-500/40`,
+        subcategories: catFormSubcategories,
+        isCustom: true,
+      };
+
+      setCategories([...categories, newCat]);
+      setIsCreateCatModalOpen(false);
+      setToastMessage(`Created category "${newCat.name}" with ${newCat.subcategories.length} subcategories`);
+      recordAuditLog({
+        action: 'CREATE_CATEGORY',
+        resource: newCat.name,
+        details: `Created new category rail /${newCat.slug} with ${newCat.subcategories.length} subcategories`,
+        result: 'SUCCESS',
+      });
+    } catch (err: any) {
+      setFormError(err?.message || 'Failed to create category on backend');
+    }
   };
 
   // Save Edited Category
-  const handleUpdateCategory = (e: React.FormEvent) => {
+  const handleUpdateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingCategory) return;
     if (!catFormName.trim()) {
@@ -218,46 +260,63 @@ export default function CategoriesPage() {
 
     const oldName = editingCategory.name;
     const newName = catFormName.trim();
+    const slug = catFormSlug.trim() || newName.toLowerCase().replace(/\s+/g, '-');
 
-    const updated: CategoryModel = {
-      ...editingCategory,
-      name: newName,
-      slug: catFormSlug.trim() || newName.toLowerCase().replace(/\s+/g, '-'),
-      description: catFormDesc.trim(),
-      color: catFormColor,
-      borderAccent: `border-${catFormColor}-500/40`,
-      subcategories: catFormSubcategories,
-    };
+    try {
+      await api.categories.update(editingCategory.id, {
+        name: newName,
+        slug,
+        description: catFormDesc.trim(),
+        color: catFormColor,
+      });
 
-    setCategories(categories.map((c) => (c.id === editingCategory.id ? updated : c)));
+      const updated: CategoryModel = {
+        ...editingCategory,
+        name: newName,
+        slug,
+        description: catFormDesc.trim(),
+        color: catFormColor,
+        borderAccent: `border-${catFormColor}-500/40`,
+        subcategories: catFormSubcategories,
+      };
 
-    // If category name was modified, update corresponding movies
-    if (oldName !== newName) {
-      setMovies(movies.map((m) => (m.category === oldName ? { ...m, category: newName } : m)));
+      setCategories(categories.map((c) => (c.id === editingCategory.id ? updated : c)));
+
+      // If category name was modified, update corresponding movies
+      if (oldName !== newName) {
+        setMovies(movies.map((m) => (m.category === oldName ? { ...m, category: newName } : m)));
+      }
+
+      setEditingCategory(null);
+      setToastMessage(`Updated category "${updated.name}"`);
+      recordAuditLog({
+        action: 'UPDATE_CATEGORY',
+        resource: updated.name,
+        details: `Modified category metadata, slug /${updated.slug}, and accent styling`,
+        result: 'SUCCESS',
+      });
+    } catch (err: any) {
+      setFormError(err?.message || 'Failed to update category on backend');
     }
-
-    setEditingCategory(null);
-    setToastMessage(`Updated category "${updated.name}"`);
-    recordAuditLog({
-      action: 'UPDATE_CATEGORY',
-      resource: updated.name,
-      details: `Modified category metadata, slug /${updated.slug}, and accent styling`,
-      result: 'SUCCESS',
-    });
   };
 
   // Delete Category
-  const handleDeleteCategory = () => {
+  const handleDeleteCategory = async () => {
     if (!deletingCategory) return;
-    setCategories(categories.filter((c) => c.id !== deletingCategory.id));
-    setToastMessage(`Deleted category "${deletingCategory.name}"`);
-    recordAuditLog({
-      action: 'DELETE_CATEGORY',
-      resource: deletingCategory.name,
-      details: `Removed category rail and unlinked associated movie assets`,
-      result: 'SUCCESS',
-    });
-    setDeletingCategory(null);
+    try {
+      await api.categories.remove(deletingCategory.id);
+      setCategories(categories.filter((c) => c.id !== deletingCategory.id));
+      setToastMessage(`Deleted category "${deletingCategory.name}"`);
+      recordAuditLog({
+        action: 'DELETE_CATEGORY',
+        resource: deletingCategory.name,
+        details: `Removed category rail and unlinked associated movie assets`,
+        result: 'SUCCESS',
+      });
+      setDeletingCategory(null);
+    } catch (err: any) {
+      setToastMessage(err?.message || 'Failed to delete category');
+    }
   };
 
   // Quick Add Subcategory to specific category

@@ -19,8 +19,10 @@ import {
   PanelLeftOpen,
   LucideIcon,
   Settings,
+  LogOut,
 } from 'lucide-react';
 import { useSidebar } from './SidebarContext';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 interface NavItem {
   label: string;
@@ -43,6 +45,7 @@ const NAV_ITEMS: NavItem[] = [
 export const AdminSidebar: React.FC = () => {
   const pathname = usePathname();
   const { isCollapsed, toggleCollapsed, mobileOpen, setMobileOpen } = useSidebar();
+  const { user, logout } = useAuth();
 
   return (
     <>
@@ -201,6 +204,44 @@ export const AdminSidebar: React.FC = () => {
             isCollapsed ? 'p-2' : 'p-3'
           }`}
         >
+          {/* Admin Profile & Logout */}
+          <div className="w-full">
+            {isCollapsed ? (
+              <button
+                onClick={logout}
+                title={`Logged in as ${user?.name || 'Super Admin'} (${user?.email || 'admin@cineblack.com'}). Click to Sign Out.`}
+                className="w-full flex items-center justify-center p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 hover:border-red-900/60 hover:bg-red-950/20 text-neutral-400 hover:text-red-400 transition-colors cursor-pointer group"
+                aria-label="Sign Out"
+              >
+                <LogOut className="w-4 h-4 text-neutral-400 group-hover:text-red-400 transition-colors" />
+              </button>
+            ) : (
+              <div className="p-2 rounded-xl bg-neutral-900/70 border border-neutral-800/80 flex items-center justify-between gap-2">
+                <div className="min-w-0 flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-red-600/20 border border-red-500/30 flex items-center justify-center text-red-400 font-bold text-xs flex-shrink-0">
+                    {(user?.name || 'A')[0].toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-neutral-200 truncate leading-none">
+                      {user?.name || 'Super Admin'}
+                    </p>
+                    <p className="text-[10px] text-neutral-500 truncate mt-1 font-mono">
+                      {user?.email || 'admin@cineblack.com'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={logout}
+                  title="Sign out of console"
+                  className="p-1.5 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-red-950/30 transition-colors cursor-pointer"
+                  aria-label="Sign Out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* External site link */}
           <div className="w-full">
             <a

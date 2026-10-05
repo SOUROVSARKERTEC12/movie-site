@@ -13,45 +13,117 @@ import {
   getStorageAggregateMetrics,
 } from '@/data/mockStorage';
 import { DiskStoragePath } from '@movie-site/shared';
+import { api } from '@/lib/api';
 
 export default function DashboardPage() {
   const [totalUserCount, setTotalUserCount] = useState<number>(MOCK_USERS.length);
   const [activeUserCount, setActiveUserCount] = useState<number>(
     MOCK_USERS.filter((u) => u.status === 'Active' || u.status === 'VIP').length
   );
+  const [totalWatchTimeHours, setTotalWatchTimeHours] = useState<number>(0);
+  const [movieCount, setMovieCount] = useState<number>(MOCK_MOVIES.length);
   const [diskPaths, setDiskPaths] = useState<DiskStoragePath[]>([]);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const initTimer = setTimeout(() => {
-      setIsClient(true);
-      setDiskPaths(getDiskStoragePaths());
+    let mounted = true;
 
-      const saved = localStorage.getItem('cineblack_admin_users');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            setTotalUserCount(parsed.length);
-            setActiveUserCount(
-              parsed.filter((u: { status?: string }) => u.status === 'Active' || u.status === 'VIP').length
-            );
+    const loadDashboardData = async () => {
+      setIsClient(true);
+
+      // 1. Fetch live movies count
+      try {
+        const movies = await api.movies.findAll();
+        if (mounted && Array.isArray(movies)) {
+          setMovieCount(movies.length);
+        }
+      } catch (err) {
+        console.warn('Could not fetch movies count from backend API:', err);
+      }
+
+      // 2. Fetch live users count & stats
+      try {
+        const users = await api.users.findAll();
+        if (mounted && Array.isArray(users) && users.length > 0) {
+          setTotalUserCount(users.length);
+          setActiveUserCount(
+            users.filter((u) => u.status === 'Active' || u.status === 'VIP').length
+          );
+          const watchTime = users.reduce((acc, u) => acc + (u.totalWatchTimeHours || 0), 0);
+          setTotalWatchTimeHours(watchTime);
+        }
+      } catch (err) {
+        console.warn('Could not fetch users from backend API, using fallback:', err);
+        const saved = typeof window !== 'undefined' ? localStorage.getItem('cineblack_admin_users') : null;
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && mounted) {
+              setTotalUserCount(parsed.length);
+              setActiveUserCount(
+                parsed.filter((u: { status?: string }) => u.status === 'Active' || u.status === 'VIP').length
+              );
+            }
+          } catch {
+            // ignore parse failure
           }
-        } catch {
-          // ignore parse failure
         }
       }
-    }, 0);
-    
-    const handleStorageUpdate = () => {
-      setDiskPaths(getDiskStoragePaths());
+
+      // 3. Fetch storage paths
+      try {
+        const paths = await api.storage.getPaths();
+        if (mounted && Array.isArray(paths) && paths.length > 0) {
+          setDiskPaths(
+            paths.map((p) => ({
+              id: p.id,
+              name: p.name,
+              path: p.path,
+              maxLimitGb: p.maxLimitGb,
+              usedGb: p.usedGb ?? 0,
+            }))
+          );
+          return;
+        }
+      } catch (err) {
+        console.warn('Could not fetch storage paths from backend API, using local storage:', err);
+      }
+
+      if (mounted) {
+        setDiskPaths(getDiskStoragePaths());
+      }
+    };
+
+    loadDashboardData();
+
+    const handleStorageUpdate = async () => {
+      try {
+        const paths = await api.storage.getPaths();
+        if (mounted && Array.isArray(paths) && paths.length > 0) {
+          setDiskPaths(
+            paths.map((p) => ({
+              id: p.id,
+              name: p.name,
+              path: p.path,
+              maxLimitGb: p.maxLimitGb,
+              usedGb: p.usedGb ?? 0,
+            }))
+          );
+          return;
+        }
+      } catch {
+        // fallback
+      }
+      if (mounted) {
+        setDiskPaths(getDiskStoragePaths());
+      }
     };
 
     window.addEventListener('cineblack_storage_updated', handleStorageUpdate);
     window.addEventListener('storage', handleStorageUpdate);
 
     return () => {
-      clearTimeout(initTimer);
+      mounted = false;
       window.removeEventListener('cineblack_storage_updated', handleStorageUpdate);
       window.removeEventListener('storage', handleStorageUpdate);
     };
@@ -74,7 +146,7 @@ export default function DashboardPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-neutral-300 hover:text-white font-bold text-xs transition-colors"
             >
               <Film className="w-3.5 h-3.5 text-neutral-400" />
-              <span>{MOCK_MOVIES.length} Catalog Movies</span>
+              <span>{movieCount} Catalog Movies</span>
             </Link>
           </div>
         }
@@ -97,13 +169,13 @@ export default function DashboardPage() {
           />
           <StatCard
             title="Total Watch Time"
-            value="0 hrs"
+            value={`${totalWatchTimeHours} hrs`}
             subtitle="Across all assets"
             icon={Clock}
           />
           <StatCard
             title="Catalog Movies"
-            value={MOCK_MOVIES.length.toString()}
+            value={movieCount.toString()}
             subtitle="4 curated rails"
             icon={Film}
           />

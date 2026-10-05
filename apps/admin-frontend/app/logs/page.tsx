@@ -26,6 +26,7 @@ import {
   resetAuditLogs,
   STORAGE_AUDIT_LOGS_KEY,
 } from '@/lib/auditLogger';
+import { api } from '@/lib/api';
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<AuditLogEntry[]>(MOCK_AUDIT_LOGS);
@@ -34,12 +35,39 @@ export default function LogsPage() {
   const [copiedPayload, setCopiedPayload] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Load audit logs from localStorage or fallback
+  // Load audit logs from backend API (with fallback to localStorage/mocks)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLogs(getAuditLogs());
-      setIsLoaded(true);
-    }, 0);
+    let isMounted = true;
+    const loadLogs = async () => {
+      try {
+        const backendLogs = await api.logs.getAuditLogs();
+        if (isMounted && backendLogs && backendLogs.length > 0) {
+          const mapped: AuditLogEntry[] = backendLogs.map((l: any) => ({
+            id: l.id,
+            timestamp: l.createdAt ? new Date(l.createdAt).toLocaleString() : 'Just now',
+            actor: l.actor,
+            actorRole: l.actorRole as any,
+            action: l.action,
+            resource: l.resource,
+            ipAddress: l.ipAddress,
+            result: l.result as any,
+            details: l.details,
+          }));
+          setLogs(mapped);
+          setIsLoaded(true);
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to load audit logs from backend, falling back to local storage', err);
+      }
+
+      if (isMounted) {
+        setLogs(getAuditLogs());
+        setIsLoaded(true);
+      }
+    };
+
+    loadLogs();
 
     const handleLogAdded = (e: Event) => {
       const customEvent = e as CustomEvent<AuditLogEntry>;
@@ -56,7 +84,7 @@ export default function LogsPage() {
     window.addEventListener('cineblack_audit_logs_reset', handleLogsReset);
 
     return () => {
-      clearTimeout(timer);
+      isMounted = false;
       window.removeEventListener('cineblack_audit_log_added', handleLogAdded);
       window.removeEventListener('cineblack_audit_logs_reset', handleLogsReset);
     };
@@ -95,8 +123,13 @@ export default function LogsPage() {
   };
 
   // Reset audit logs back to initial operational seed
-  const handleResetLogs = () => {
+  const handleResetLogs = async () => {
     if (confirm('Reset administrative audit trail back to initial system baseline?')) {
+      try {
+        await api.logs.resetAuditLogs();
+      } catch (err) {
+        console.error('Failed to reset backend audit logs', err);
+      }
       const reset = resetAuditLogs();
       setLogs(reset);
       setSelectedLog(null);

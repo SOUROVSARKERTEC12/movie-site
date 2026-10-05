@@ -2,7 +2,7 @@ import { Controller, Get, UseGuards } from '@nestjs/common';
 import { SystemService } from './system.service';
 import { AuthGuard } from '@nestjs/passport';
 
-@Controller('api/v1/system')
+@Controller('system')
 @UseGuards(AuthGuard('jwt'))
 export class SystemController {
   constructor(private readonly systemService: SystemService) {}

@@ -30,6 +30,7 @@ import { DataTable, Column } from '@/components/DataTable';
 import { StatCard } from '@/components/StatCard';
 import { MOCK_ACTIVITIES } from '@/data/mockActivities';
 import { UserActivityEvent, ActivityEventType } from '@movie-site/shared';
+import { api } from '@/lib/api';
 
 const STORAGE_KEY = 'cineblack_admin_activities';
 
@@ -40,28 +41,67 @@ export default function UserActivityPage() {
   const [copiedId, setCopiedId] = useState(false);
   const [liveStreamActive, setLiveStreamActive] = useState(true);
 
-  // Load activities from localStorage or fallback to MOCK_ACTIVITIES
+  // Load activities from live backend API or fallback to localStorage / MOCK_ACTIVITIES
   useEffect(() => {
-    const timer = setTimeout(() => {
+    let mounted = true;
+
+    const loadActivities = async () => {
+      try {
+        const liveItems = await api.logs.getUserActivities();
+        if (mounted && Array.isArray(liveItems) && liveItems.length > 0) {
+          const mapped: UserActivityEvent[] = liveItems.map((item) => ({
+            id: item.id,
+            timestamp: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString(),
+            userId: item.userId,
+            userName: item.userName,
+            userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+            eventType: (item.eventType || 'SESSION_START') as ActivityEventType,
+            contentTitle: item.contentTitle || undefined,
+            contentId: item.contentId || undefined,
+            device: item.device || 'Desktop',
+            browser: item.browser || 'Chrome',
+            os: item.os || 'Windows',
+            ipAddress: item.ipAddress || '127.0.0.1',
+            location: item.location || 'Local',
+            sessionId: item.sessionId || `sess_${item.id.slice(0, 8)}`,
+          }));
+          setActivities(mapped);
+          setIsLoaded(true);
+          return;
+        }
+      } catch (err) {
+        console.warn('Could not fetch user activities from API, using fallback:', err);
+      }
+
+      // Fallback
       if (typeof window !== 'undefined') {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              setActivities(parsed);
-              setIsLoaded(true);
+              if (mounted) {
+                setActivities(parsed);
+                setIsLoaded(true);
+              }
               return;
             }
           } catch (e) {
             console.error('Failed to parse saved activities from localStorage', e);
           }
         }
-        setActivities(MOCK_ACTIVITIES);
-        setIsLoaded(true);
+        if (mounted) {
+          setActivities(MOCK_ACTIVITIES);
+          setIsLoaded(true);
+        }
       }
-    }, 0);
-    return () => clearTimeout(timer);
+    };
+
+    loadActivities();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Save activities to localStorage whenever state changes
@@ -72,8 +112,13 @@ export default function UserActivityPage() {
   }, [activities, isLoaded]);
 
   // Reset to default seed activities
-  const handleResetToDefault = () => {
+  const handleResetToDefault = async () => {
     if (confirm('Reset telemetry event directory to initial system defaults?')) {
+      try {
+        await api.logs.resetUserActivities();
+      } catch (err) {
+        console.warn('Failed to reset user activities on backend API:', err);
+      }
       setActivities(MOCK_ACTIVITIES);
       if (typeof window !== 'undefined') {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_ACTIVITIES));

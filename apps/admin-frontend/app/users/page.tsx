@@ -25,6 +25,7 @@ import { StatCard } from '@/components/StatCard';
 import { MOCK_USERS } from '@/data/mockUsers';
 import { UserProfile, UserRole, UserStatus } from '@movie-site/shared';
 import { recordAuditLog } from '@/lib/auditLogger';
+import { api } from '@/lib/api';
 
 const STORAGE_KEY = 'cineblack_admin_users';
 
@@ -83,28 +84,74 @@ export default function UsersPage() {
     }
   }, [toastMessage]);
 
-  // Load users from localStorage or fallback to MOCK_USERS
+  // Load users from Backend API (with fallback to localStorage or MOCK_USERS)
   useEffect(() => {
-    const timer = setTimeout(() => {
+    let isMounted = true;
+    const loadUsers = async () => {
+      try {
+        const apiUsers = await api.users.findAll();
+        if (isMounted && apiUsers && apiUsers.length > 0) {
+          const mapped: UserProfile[] = apiUsers.map((u: any) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              u.name
+            )}&background=${u.role === 'super_admin' ? 'b45309' : u.role === 'admin' ? '1d4ed8' : '262626'}&color=fff&size=120`,
+            role: (u.role as UserRole) || 'user',
+            status: (u.status as UserStatus) || 'Active',
+            registrationDate: u.createdAt
+              ? new Date(u.createdAt).toISOString().split('T')[0]
+              : new Date().toISOString().split('T')[0],
+            lastActive: 'Recently',
+            totalWatchTimeHours: u.totalWatchTimeHours || 0,
+            moviesWatchedCount: u.moviesWatchedCount || 0,
+            currentDevice: 'Web App',
+            location: {
+              country: 'Bangladesh',
+              city: 'Dhaka',
+              flag: '🇧🇩',
+            },
+            ipAddress: '127.0.0.1',
+            preferences: {
+              subtitlesEnabled: true,
+              autoplayNext: true,
+            },
+          }));
+          setUsers(mapped);
+          setIsLoaded(true);
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to load users from backend API, falling back to local storage', err);
+      }
+
       if (typeof window !== 'undefined') {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              setUsers(parsed);
-              setIsLoaded(true);
+              if (isMounted) setUsers(parsed);
+              if (isMounted) setIsLoaded(true);
               return;
             }
           } catch (e) {
             console.error('Failed to parse saved users from localStorage', e);
           }
         }
+      }
+
+      if (isMounted) {
         setUsers(MOCK_USERS);
         setIsLoaded(true);
       }
-    }, 0);
-    return () => clearTimeout(timer);
+    };
+
+    loadUsers();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Save users to localStorage whenever state changes
@@ -148,7 +195,7 @@ export default function UsersPage() {
   };
 
   // Create User Handler
-  const handleCreateUser = (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
       setFormError('User name is required');
@@ -170,43 +217,52 @@ export default function UsersPage() {
       formData.name.trim()
     )}&background=${formData.role === 'super_admin' ? 'b45309' : formData.role === 'admin' ? '1d4ed8' : '262626'}&color=fff&size=120`;
 
-    const newUser: UserProfile = {
-      id: `usr_${Date.now().toString(36)}`,
-      name: formData.name.trim(),
-      email: formData.email.trim().toLowerCase(),
-      avatar: avatarUrl,
-      role: formData.role,
-      registrationDate: new Date().toISOString().split('T')[0],
-      lastActive: 'Just now',
-      status: formData.status,
-      totalWatchTimeHours: 0,
-      moviesWatchedCount: 0,
-      currentDevice: formData.currentDevice,
-      location: {
-        country: formData.country,
-        city: formData.city,
-        flag: flag,
-      },
-      ipAddress: `192.168.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 250)}`,
-      preferences: {
-        subtitlesEnabled: true,
-        autoplayNext: true,
-      },
-    };
+    try {
+      const created = await api.users.create({
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+      });
 
-    setUsers([newUser, ...users]);
-    setIsCreateModalOpen(false);
-    setToastMessage(`Created user "${newUser.name}" as ${newUser.role}`);
-    recordAuditLog({
-      action: 'CREATE_USER',
-      resource: `${newUser.name} (${newUser.email})`,
-      details: `Registered account with role "${newUser.role}", tier status "${newUser.status}", from ${newUser.location.city}, ${newUser.location.country}`,
-      result: 'SUCCESS',
-    });
+      const newUser: UserProfile = {
+        id: created.id,
+        name: created.name,
+        email: created.email,
+        avatar: avatarUrl,
+        role: formData.role,
+        registrationDate: new Date().toISOString().split('T')[0],
+        lastActive: 'Just now',
+        status: formData.status,
+        totalWatchTimeHours: 0,
+        moviesWatchedCount: 0,
+        currentDevice: formData.currentDevice,
+        location: {
+          country: formData.country,
+          city: formData.city,
+          flag: flag,
+        },
+        ipAddress: `192.168.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 250)}`,
+        preferences: {
+          subtitlesEnabled: true,
+          autoplayNext: true,
+        },
+      };
+
+      setUsers([newUser, ...users]);
+      setIsCreateModalOpen(false);
+      setToastMessage(`Created user "${newUser.name}" as ${newUser.role}`);
+      recordAuditLog({
+        action: 'CREATE_USER',
+        resource: `${newUser.name} (${newUser.email})`,
+        details: `Registered account with role "${newUser.role}", tier status "${newUser.status}", from ${newUser.location.city}, ${newUser.location.country}`,
+        result: 'SUCCESS',
+      });
+    } catch (err: any) {
+      setFormError(err?.message || 'Failed to create user on backend');
+    }
   };
 
   // Update User Handler
-  const handleUpdateUser = (e: React.FormEvent) => {
+  const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
     if (!formData.name.trim()) {
@@ -232,53 +288,69 @@ export default function UsersPage() {
 
     const flag = COUNTRY_FLAGS[formData.country] || editingUser.location?.flag || '🌐';
 
-    const updatedUser: UserProfile = {
-      ...editingUser,
-      name: formData.name.trim(),
-      email: formData.email.trim().toLowerCase(),
-      role: formData.role,
-      status: formData.status,
-      currentDevice: formData.currentDevice,
-      location: {
-        country: formData.country,
-        city: formData.city,
-        flag: flag,
-      },
-      preferences: {
-        subtitlesEnabled: editingUser.preferences?.subtitlesEnabled ?? true,
-        autoplayNext: editingUser.preferences?.autoplayNext ?? true,
-      },
-    };
+    try {
+      await api.users.update(editingUser.id, {
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        role: formData.role,
+        status: formData.status,
+      });
 
-    setUsers(users.map((u) => (u.id === editingUser.id ? updatedUser : u)));
-    if (selectedUser?.id === editingUser.id) {
-      setSelectedUser(updatedUser);
+      const updatedUser: UserProfile = {
+        ...editingUser,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        role: formData.role,
+        status: formData.status,
+        currentDevice: formData.currentDevice,
+        location: {
+          country: formData.country,
+          city: formData.city,
+          flag: flag,
+        },
+        preferences: {
+          subtitlesEnabled: editingUser.preferences?.subtitlesEnabled ?? true,
+          autoplayNext: editingUser.preferences?.autoplayNext ?? true,
+        },
+      };
+
+      setUsers(users.map((u) => (u.id === editingUser.id ? updatedUser : u)));
+      if (selectedUser?.id === editingUser.id) {
+        setSelectedUser(updatedUser);
+      }
+      setEditingUser(null);
+      setToastMessage(`Updated user "${updatedUser.name}"`);
+      recordAuditLog({
+        action: updatedUser.role !== editingUser.role ? 'UPDATE_ROLE' : 'UPDATE_USER',
+        resource: `${updatedUser.name} (${updatedUser.email})`,
+        details: `Updated profile (role: "${updatedUser.role}", status: "${updatedUser.status}", location: ${updatedUser.location.city})`,
+        result: 'SUCCESS',
+      });
+    } catch (err: any) {
+      setFormError(err?.message || 'Failed to update user on backend');
     }
-    setEditingUser(null);
-    setToastMessage(`Updated user "${updatedUser.name}"`);
-    recordAuditLog({
-      action: updatedUser.role !== editingUser.role ? 'UPDATE_ROLE' : 'UPDATE_USER',
-      resource: `${updatedUser.name} (${updatedUser.email})`,
-      details: `Updated profile (role: "${updatedUser.role}", status: "${updatedUser.status}", location: ${updatedUser.location.city})`,
-      result: 'SUCCESS',
-    });
   };
 
   // Delete User Handler
-  const handleDeleteUser = () => {
+  const handleDeleteUser = async () => {
     if (!deletingUser) return;
-    setUsers(users.filter((u) => u.id !== deletingUser.id));
-    if (selectedUser?.id === deletingUser.id) {
-      setSelectedUser(null);
+    try {
+      await api.users.remove(deletingUser.id);
+      setUsers(users.filter((u) => u.id !== deletingUser.id));
+      if (selectedUser?.id === deletingUser.id) {
+        setSelectedUser(null);
+      }
+      setToastMessage(`Deleted user "${deletingUser.name}"`);
+      recordAuditLog({
+        action: 'DELETE_USER',
+        resource: `${deletingUser.name} (${deletingUser.email})`,
+        details: `Revoked subscriber account and purged active sessions`,
+        result: 'SUCCESS',
+      });
+      setDeletingUser(null);
+    } catch (err: any) {
+      setToastMessage(err?.message || 'Failed to delete user on backend');
     }
-    setToastMessage(`Deleted user "${deletingUser.name}"`);
-    recordAuditLog({
-      action: 'DELETE_USER',
-      resource: `${deletingUser.name} (${deletingUser.email})`,
-      details: `Revoked subscriber account and purged active sessions`,
-      result: 'SUCCESS',
-    });
-    setDeletingUser(null);
   };
 
   // Metrics

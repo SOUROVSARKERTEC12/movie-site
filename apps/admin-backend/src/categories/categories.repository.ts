@@ -12,6 +12,9 @@ export class CategoriesRepository {
     const result = await this.db.insert(schema.categories).values({
       name: categoryData.name,
       slug: categoryData.slug,
+      description: categoryData.description,
+      color: categoryData.color,
+      isCustom: categoryData.isCustom ?? false,
     }).returning();
     return result[0];
   }
