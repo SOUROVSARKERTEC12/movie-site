@@ -1,12 +1,12 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { StorageService } from './storage.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateStoragePathDto, UpdateStoragePathDto, StoragePathResponseDto, StorageMetricsResponseDto } from './dto/storage.dto';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
 
 @Controller('storage')
 @UseGuards(AuthGuard('jwt'))
 export class StorageController {
-  constructor(private readonly storageService: StorageService) {}
+  constructor(private readonly storageService: StorageService) { }
 
   @Get('paths')
   getPaths(): Promise<StoragePathResponseDto[]> {

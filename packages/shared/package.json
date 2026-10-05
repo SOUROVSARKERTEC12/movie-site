@@ -9,8 +9,5 @@
   },
   "devDependencies": {
     "typescript": "^5"
-  },
-  "dependencies": {
-    "@nestjs/core": "^12.1.2"
   }
 }

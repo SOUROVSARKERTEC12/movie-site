@@ -30,7 +30,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.4.7",
     "@nestjs/terminus": "^11.0.0",
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "12.11.1",
     "drizzle-orm": "^0.45.3",
     "nestjs-zod": "^5.5.0",
     "passport": "^0.7.0",
